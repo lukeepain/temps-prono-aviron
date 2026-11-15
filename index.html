@@ -1,0 +1,1363 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Temps Prono Aviron</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: bandeau de saisie du lien en haut, puis résultats par course (ou classement global) en pleine largeur */
+:root{
+  --bg:#f3f6f7; --surface:#ffffff; --fg:#14262e; --muted:#5b6f78; --line:#d6e0e3;
+  --accent:#0b5d73; --buoy:#f2b705; --good:#1f7a4d; --warn:#b26b00; --bad:#b3362c;
+  --chip-good:#e2f2e9; --chip-mid:#e6f0f3; --chip-warn:#fbf0dc; --chip-bad:#f8e4e2;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d171c; --surface:#13222a; --fg:#e3edf0; --muted:#8fa5ad; --line:#24363e;
+  --accent:#4fb3cc; --buoy:#f5c534; --good:#5cc68d; --warn:#e3a33d; --bad:#ef7a6f;
+  --chip-good:#173326; --chip-mid:#1a2c34; --chip-warn:#36290f; --chip-bad:#3a1d1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d171c; --surface:#13222a; --fg:#e3edf0; --muted:#8fa5ad; --line:#24363e;
+  --accent:#4fb3cc; --buoy:#f5c534; --good:#5cc68d; --warn:#e3a33d; --bad:#ef7a6f;
+  --chip-good:#173326; --chip-mid:#1a2c34; --chip-warn:#36290f; --chip-bad:#3a1d1a; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+header{display:grid;gap:6px;border-bottom:3px solid var(--fg);padding-bottom:14px;position:relative}
+header::after{content:"";position:absolute;left:0;bottom:-3px;width:96px;height:3px;background:var(--buoy)}
+.eyebrow{font-family:var(--f-display);font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-size:14px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(32px,5vw,48px);line-height:1;margin:0;text-wrap:balance;text-transform:uppercase}
+header p{margin:0;color:var(--muted);max-width:70ch}
+header{grid-template-columns:minmax(0,1fr) auto;column-gap:18px;align-items:center}
+header>*:not(.hlogo):not(.clock){grid-column:1}
+header{grid-template-columns:minmax(0,1fr) auto auto}
+.hlogo{grid-column:3!important}
+.clock{grid-column:2;grid-row:1 / span 2;align-self:center;text-align:right;line-height:1.1;padding:6px 12px;border-left:3px solid var(--accent)}
+.clk-t{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:30px;font-weight:600;color:var(--fg)}
+.clk-u{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap}
+.clk-u.live{color:var(--accent);font-weight:600}
+.clk-u.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:1px;animation:clkp 1.6s ease-in-out infinite}
+@keyframes clkp{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.clk-u.live::before{animation:none}}
+@media (max-width:700px){.clock{grid-column:1 / span 2;grid-row:3;text-align:left;display:flex;align-items:baseline;gap:10px;padding:2px 0 0 8px}.clk-t{font-size:18px}.clk-u{margin:0}.hlogo{grid-column:2!important}header{grid-template-columns:minmax(0,1fr) auto}}
+.hlogo{grid-column:2;grid-row:1 / span 2;align-self:center;height:76px;width:auto;background:#fff;border-radius:6px;padding:4px 8px;border:1px solid var(--line)}
+#intro{display:none!important}
+@media (max-width:700px){header{column-gap:10px}.hlogo{height:46px;padding:3px 5px}header h1{font-size:27px}header .eyebrow{font-size:10.5px;letter-spacing:.06em}}
+@media (max-width:420px){.hlogo{height:38px}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:14px;min-width:0}
+h2{font-family:var(--f-display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px;margin:0}
+label,.lbl{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+input[type=url],input[type=text],input[type=search],input[type=number],select,textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+textarea{min-height:150px;resize:vertical;font-family:var(--f-mono);font-size:12.5px}
+.ctpick{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px;align-items:end;margin-bottom:4px}
+.ctpick select{width:100%}
+.ctmsg{margin:0 0 10px;font-size:12px;min-height:1em}
+@media (max-width:760px){.ctpick{grid-template-columns:1fr}}
+.linkrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+#settings{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line, #d0d7de)}
+.srchead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.srchead h2{margin:0}
+.srbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.srbtns .toast{font-size:12px}
+/* Choix des épreuves exportées (PDF et copie) */
+.expsel{position:relative}
+.expsel>summary{list-style:none;font:600 13px var(--f-body);padding:3px 10px;border-radius:4px;border:1px solid var(--accent);color:var(--accent);cursor:pointer;white-space:nowrap}
+.expsel>summary::-webkit-details-marker{display:none}
+.expsel[open]>summary{background:var(--chip-mid)}
+.exppanel{position:absolute;right:0;top:calc(100% + 4px);z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.15);padding:10px;width:min(320px,86vw);max-height:60vh;overflow:auto;display:grid;gap:4px}
+.exppanel .exptop{display:flex;gap:6px;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+.exppanel label{display:flex;gap:8px;align-items:center;font:500 13px var(--f-body);text-transform:none;letter-spacing:0;color:var(--fg);cursor:pointer;padding:2px 0;margin:0}
+.exppanel label .na{margin-left:auto;font-size:11px}
+.exppanel label.expep{font-weight:700;margin-top:4px}
+.exppanel label.expco{padding-left:22px;font-size:12px;color:var(--muted)}
+.expsel.partial>summary{background:var(--chip-warn);border-color:var(--warn);color:var(--warn)}
+/* Affichage réduit : seuls les résultats et le filtre Épreuve restent visibles */
+.compact #cmtSec,.compact .ctpick,.compact #ctMsg,.compact .linkrow,.compact #settings,.compact #pasteBox:not([open]),
+.compact #sendBar,.compact #sendOut,.compact #summary,.compact #corr,
+.compact .filters>div:not(:has(#fCat)),
+.compact section[aria-labelledby="h-out"]>.btns,.compact section[aria-labelledby="h-out"]>details{display:none!important}
+.compact .srchead{margin-bottom:0}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+@media (max-width:760px){.opts{grid-template-columns:1fr 1fr}.linkrow{grid-template-columns:1fr}}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:600 14px var(--f-body);padding:8px 14px;border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer;white-space:nowrap}
+button.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--buoy);outline-offset:2px}
+.status{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:14px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px;vertical-align:middle}
+.live .dot{background:var(--good);box-shadow:0 0 0 3px var(--chip-good)}
+.err{color:var(--bad)}
+.msg{font-size:14px;padding:10px 12px;border-radius:4px;background:var(--chip-warn);color:var(--fg);border-left:3px solid var(--warn)}
+.msg code{font-family:var(--f-mono);font-size:12px;word-break:break-all}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;justify-content:space-between}
+.seg{display:inline-flex;border:1px solid var(--accent);border-radius:4px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent;color:var(--accent)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.filters{display:flex;gap:10px;flex-wrap:wrap}
+.filters>div{min-width:150px}
+.summary{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;color:var(--muted)}
+.summary b{color:var(--fg);font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:8px;font-size:13px;color:var(--muted);align-items:center}
+.race{border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:0}
+.race.off{opacity:.6}
+.race.off .race-h{border-bottom:0}
+.race-h{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 14px;border-bottom:2px solid var(--fg)}
+.race-num{font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.race-name{font-weight:600;flex:1 1 220px;min-width:0}
+.race-meta{font-size:13px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.race-meta select{width:auto;padding:3px 6px;font-size:13px}
+.distin{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.distin input{width:74px;padding:3px 5px;font-size:13px;font-family:var(--f-mono);text-align:right}
+.distin.edited input{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+.wxbox{display:grid;gap:10px;padding-top:12px;border-top:1px solid var(--line)}
+.wxrow{display:flex;flex-wrap:wrap;gap:10px}
+.res td{vertical-align:middle}
+.res th.grp{text-align:center;border-bottom:1px solid var(--line);padding-bottom:4px}
+.res th.grp .na{font-family:var(--f-body);text-transform:none;letter-spacing:0;font-size:11px;margin-left:4px}
+.res tr.sub th{padding-top:4px;font-size:12px}
+.res .sep{border-left:1px solid var(--line)}
+.res .sp{display:flex;justify-content:flex-end;align-items:center;gap:8px;white-space:nowrap}
+.res .part{font-size:12px;color:var(--muted);text-align:right;line-height:1.2;margin-top:1px}
+.res .rk{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:1px solid var(--line);font-size:11px;color:var(--muted);font-family:var(--f-body);font-weight:600}
+.res .rk.r1{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.res .lead{font-family:var(--f-body);font-size:12px;font-weight:600;color:var(--accent)}
+.res .crewc{min-width:180px}
+.res .crewc .na{font-size:12px}
+@media (max-width:600px){table.res{min-width:0;font-size:13px}.res .crewc{min-width:0;max-width:110px;white-space:normal}.res th,.res td{padding-left:5px;padding-right:5px}.res th{font-size:10.5px;letter-spacing:.03em;white-space:normal}.res .pct{min-width:0;padding:2px 5px;white-space:nowrap}}
+.cmpbar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:14px}
+.cmpl{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;text-transform:none;letter-spacing:0;color:var(--fg);font-weight:600;margin:0}
+.cmpc{width:28px;padding-right:0}
+table.flat td:nth-child(3){min-width:110px}
+#out,#out .race,.panel>*{min-width:0}
+table.flat .wx{white-space:nowrap}
+.cmp{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;vertical-align:middle}
+tr.picked td{background:var(--chip-mid)}
+.tl{display:grid;gap:14px}
+.send{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:4px;background:var(--bg);font-size:14px}
+.send b{font-variant-numeric:tabular-nums}
+.sendOut{display:grid;gap:8px;padding:12px;border-left:3px solid var(--good);background:var(--chip-good);border-radius:4px;font-size:14px}
+.sendOut a{color:var(--accent);font-weight:600}
+.sendOut textarea{min-height:70px;font-size:11px}
+.pick{display:inline-flex;align-items:center;cursor:pointer}
+.pick input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.tlname{color:var(--accent)}
+.tlname:not(:empty)::before{content:"· ";color:var(--muted)}
+.tlday{display:grid;gap:4px;min-width:0}
+.tlhead{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;font-size:14px;color:var(--muted)}
+.tlhead b{font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:.04em;text-transform:uppercase;color:var(--fg)}
+.tlsvg{display:block;max-width:100%;overflow:visible}
+.tlsvg text{font-family:var(--f-body);font-size:11px;fill:var(--muted)}
+.tlsvg text.tlcard{font-family:var(--f-mono);font-size:8.5px;fill:var(--fg)}
+.tlnote{font-size:13px;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center}
+.tlkey{display:inline-flex;align-items:center;gap:6px}
+.basinForm{display:grid;gap:10px;padding:12px;border:1px dashed var(--line);border-radius:4px;background:var(--bg)}
+.axis{font-family:var(--f-mono);font-size:13px;color:var(--fg)}
+.axis.warn{color:var(--warn)}
+.wxrow>div{min-width:0}
+.wxsrc{font-size:11px;font-family:var(--f-mono);color:var(--good);white-space:nowrap;margin-right:-4px}
+.wxsrc.plan{color:var(--muted);font-style:italic}
+.wx{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--fg);padding:1px 8px;border-radius:3px;background:var(--chip-mid);font-variant-numeric:tabular-nums}
+.wx.face{background:var(--chip-warn)}
+.wx.dos{background:var(--chip-good)}
+.wxa{width:13px;height:13px;flex:none;color:var(--accent)}
+.wxb{width:18px;height:18px;flex:none;color:var(--fg)}
+.wx.face .wxb{color:var(--warn)}
+.wx.dos .wxb{color:var(--good)}
+[hidden]{display:none!important}
+.corr{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px;padding:10px 12px;border:1px dashed var(--buoy);border-radius:4px}
+.corr-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 4px 2px 10px;border-radius:3px;background:var(--chip-warn)}
+.corr-chip b{font-family:var(--f-mono);font-size:13px}
+button.x{padding:0 8px;font-size:16px;line-height:1.4;background:transparent;color:var(--fg);border:0}
+button.small{padding:3px 10px;font-size:13px}
+.rsel{display:flex;gap:2px 3px;align-items:center;flex-wrap:wrap;max-width:132px}
+th.catc{width:1%;white-space:nowrap}
+th.gapc{width:1%;white-space:nowrap}
+.rsel select{width:auto;max-width:128px;padding:1px 2px;font-size:11.5px}
+.rsel.edited select{border-color:var(--buoy);box-shadow:0 0 0 1px var(--buoy)}
+.rsel .pt{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-left:0;white-space:nowrap}
+.tag{font-family:var(--f-mono);font-size:12px;padding:1px 6px;border:1px solid var(--line);border-radius:3px;color:var(--fg)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:820px;font-size:14px}
+th{font-family:var(--f-display);font-weight:500;text-transform:uppercase;letter-spacing:.08em;font-size:13px;color:var(--muted);text-align:left;padding:7px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.r,td.r{text-align:right}
+td{padding:6px 12px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+td.t{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.flat th{cursor:pointer;user-select:none}
+.pct{display:inline-block;min-width:70px;text-align:right;padding:2px 8px;border-radius:3px;font-family:var(--f-mono);font-weight:600;font-variant-numeric:tabular-nums}
+.legend .pct{min-width:0;font-size:12px}
+.p-top{background:var(--chip-good);color:var(--good)}
+.p-hi{background:var(--chip-mid);color:var(--accent)}
+.p-mid{background:var(--chip-warn);color:var(--warn)}
+.p-low{background:var(--chip-bad);color:var(--bad)}
+.na{color:var(--muted);font-size:13px}
+.sample{display:inline-block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;background:var(--buoy);color:#14262e;padding:2px 6px;border-radius:3px;font-weight:600;vertical-align:middle}
+.races{display:grid;gap:14px}
+details{border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.ref{overflow-x:auto;margin-top:10px}
+.ref table{min-width:560px;font-size:13px}
+.ref td{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.toast{font-size:13px;color:var(--good);min-height:1.2em}
+.new{animation:flash 2.4s ease-out}
+@keyframes flash{from{background:var(--chip-warn)}to{background:transparent}}
+@media (prefers-reduced-motion:reduce){.new{animation:none}}
+</style>
+<style>html,body{margin:0}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <img class="hlogo" src="data:image/webp;base64,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" alt="France Aviron · Pôle Aviron Nantes" width="410" height="138">
+    <div class="eyebrow">Temps pronostics FFAviron · Olympiade 2025–2028 · Base 2000 m</div>
+    <h1>Temps Prono Aviron</h1>
+    <div class="clock" id="clock" aria-live="off"><div class="clk-t" id="clkT">--:--:--</div><div class="clk-u" id="clkU"></div></div>
+  </header>
+
+  <section class="panel" id="wxTl" aria-labelledby="h-tl" hidden>
+    <h2 id="h-tl">Vent sur le bassin <span class="tlname" id="tlName"></span></h2>
+    <div class="tl" id="wxTlBody"></div>
+    <p class="tlnote" id="wxTlNote"></p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-src">
+    <div class="srchead"><h2 id="h-src">Régate</h2><div class="srbtns"><span class="toast" id="toast" role="status"></span><details class="expsel" id="expSel"><summary id="expSum">Courses affichées</summary><div class="exppanel" id="expPanel"></div></details><button id="copy" class="ghost small" type="button">Copier pour un tableur</button><button id="pdf" class="small" type="button">⤓ Exporter en PDF</button><button id="setTog" class="ghost small" type="button" aria-expanded="false">⚙ Afficher les paramètres</button></div></div>
+    <div class="ctpick">
+      <div><label for="ctList">Régates françaises sur CrewTimer</label><select id="ctList"><option value="">Choisir une régate…</option></select></div>
+      <div><label for="ctFind">Rechercher</label><input type="search" id="ctFind" placeholder="Ville, ligue, nom…" autocomplete="off"></div>
+    </div>
+    <p class="hint ctmsg" id="ctMsg"></p>
+    <div class="linkrow">
+      <div><label for="url">… ou lien CrewTimer</label><input type="url" id="url" placeholder="https://crewtimer.com/regatta/r16431" autocomplete="off"></div>
+      <div class="btns"><button id="go" type="button">Charger</button><button id="stop" class="ghost" type="button" hidden>Arrêter le direct</button></div>
+    </div>
+    <div id="settings">
+    <div class="opts">
+      <div><label for="where">Où lire la catégorie</label><select id="where"><option value="auto">Automatique</option><option value="abbrev">Code d'épreuve</option><option value="event">Colonne Event</option><option value="stroke">Colonne Nage</option><option value="crew">Colonne Équipage</option></select></div>
+      <div><label for="every">Actualisation</label><select id="every"><option value="10" selected>Toutes les 10 s</option><option value="15">Toutes les 15 s</option><option value="30">Toutes les 30 s</option><option value="60">Toutes les minutes</option><option value="120">Toutes les 2 min</option><option value="0">Manuelle</option></select></div>
+      <div><label for="dist">Distance par défaut (m)</label><input type="number" id="dist" value="2000" min="250" step="50"></div>
+      <div><label for="u17">Catégorie U17</label><select id="u17"><option value="U19" selected>Pronostic U19</option><option value="U19B">Pronostic U19B</option><option value="">Hors table (pas de %)</option></select></div>
+      <div><label for="splitWp">Passages intermédiaires</label><select id="splitWp"><option value="">Aucun</option></select></div>
+      <div><label for="mix">Bateaux mixtes</label><select id="mix"><option value="">Hors table (pas de %)</option><option value="F">Comparer aux femmes</option><option value="H">Comparer aux hommes</option></select></div>
+    </div>
+    <div class="wxbox">
+      <span class="lbl" style="margin:0">Conditions du bassin</span>
+      <div class="wxrow">
+        <div style="flex:3 1 260px"><label for="basinSel">Bassin enregistré</label><select id="basinSel"><option value="">Aucun : saisie libre ci-dessous</option></select></div>
+        <div class="btns" style="align-self:end"><button id="basinNew" class="ghost small" type="button">Ajouter un bassin</button><button id="basinEdit" class="ghost small" type="button" disabled>Modifier</button></div>
+      </div>
+      <div class="basinForm" id="basinForm" hidden>
+        <div class="wxrow">
+          <div style="flex:2 1 200px"><label for="bName">Nom du bassin</label><input type="text" id="bName" placeholder="Vichy, plan d'eau" autocomplete="off"></div>
+          <div style="flex:2 1 200px"><label for="bStart">Départ (latitude, longitude)</label><input type="text" id="bStart" placeholder="46.1312, 3.4189" autocomplete="off"></div>
+          <div style="flex:2 1 200px"><label for="bFinish">Arrivée (latitude, longitude)</label><input type="text" id="bFinish" placeholder="46.1150, 3.4201" autocomplete="off"></div>
+        </div>
+        <div class="wxrow"><div style="flex:2 1 260px"><label for="bHydro">Station hydrométrique (facultatif)</label><input type="text" id="bHydro" placeholder="code Hub'Eau, ex. O494101001 (Tarn à Montauban)" autocomplete="off"></div></div>
+        <span class="axis" id="bAxis">Saisissez les coordonnées du départ et de l'arrivée.</span>
+        <div class="btns"><button id="bSave" class="small" type="button">Enregistrer le bassin</button><button id="bDel" class="ghost small" type="button" hidden>Supprimer</button><button id="bCancel" class="ghost small" type="button">Annuler</button></div>
+        <p class="hint">Sur Google Maps en vue satellite : clic droit au milieu de la ligne de départ, cliquez sur les coordonnées pour les copier, collez-les ici. Faites de même pour la ligne d'arrivée. L'axe est calculé du départ vers l'arrivée, et la météo est prise au milieu du bassin.</p>
+      </div>
+      <div class="wxrow">
+        <div style="flex:2 1 220px"><label for="wxPlace">Bassin (ville ou coordonnées)</label><input type="text" id="wxPlace" placeholder="Vaires-sur-Marne ou 48.866, 2.615" autocomplete="off"></div>
+        <div style="flex:2 1 220px"><label for="wxPick">Lieu retenu</label><select id="wxPick"><option value="">Aucun bassin choisi</option></select></div>
+        <div style="flex:1 1 130px"><label for="wxOrient">Sens de course (°)</label><input type="number" id="wxOrient" min="0" max="359.9" step="0.1" placeholder="ex. 90"></div>
+        <div style="flex:1 1 150px"><label for="wxDate">Date du 1er jour</label><input type="date" id="wxDate"></div>
+      </div>
+      <div class="btns"><button id="wxGo" class="ghost small" type="button">Chercher le bassin</button><button id="wxLoad" class="ghost small" type="button">Actualiser les conditions</button><span class="hint" id="wxMsg">Choisissez le bassin pour afficher le vent et la température au départ de chaque course.</span></div>
+      <p class="hint">Sens de course : direction vers laquelle avancent les bateaux (0 = nord, 90 = est, 180 = sud, 270 = ouest). Il sert à calculer le vent de face, de dos ou de travers. Date : à remplir seulement si CrewTimer ne la donne pas. Les conditions viennent d'Open-Meteo : c'est un modèle météo au quart d'heure, pas une mesure prise sur le bassin.</p>
+    </div>
+    </div>
+    <div class="status" id="status" role="status"><span><span class="dot"></span><span id="stText">Données d'exemple affichées.</span></span></div>
+    <div class="msg" id="msg" hidden></div>
+    <details id="pasteBox">
+      <summary>Coller les données à la main</summary>
+      <p class="hint" style="margin-top:8px">Pour une feuille de résultats d'un autre site : sélectionnez tout sur la page, copiez et collez ici.</p>
+      <textarea id="paste" spellcheck="false" placeholder="Contenu JSON CrewTimer ou texte de résultats"></textarea>
+      <div class="btns" style="margin-top:8px"><button id="usePaste" class="ghost" type="button">Calculer depuis le texte collé</button></div>
+    </details>
+  </section>
+
+  <section class="panel" aria-labelledby="h-out">
+    <div class="toolbar">
+      <h2 id="h-out"><span id="regName">Résultats</span> <span class="sample" id="sampleTag">Exemple</span></h2>
+      <div class="seg" role="group" aria-label="Affichage">
+        <button type="button" id="vRace" aria-pressed="true">Par course</button>
+        <button type="button" id="vFlat" aria-pressed="false">Classement %</button>
+      </div>
+    </div>
+    <div class="filters">
+      <div><label for="fDay">Journée</label><select id="fDay"><option value="">Toutes</option></select></div>
+      <div><label for="fCat">Épreuve</label><select id="fCat"><option value="">Toutes</option></select></div>
+      <div><label for="fSex">Sexe</label><select id="fSex"><option value="">Tous</option><option value="H">Hommes</option><option value="F">Femmes</option><option value="M">Mixtes</option></select></div>
+      <div><label for="fAge">Âge</label><select id="fAge"><option value="">Tous</option><option value="SA">Senior</option><option value="U23">U23</option><option value="U19">U19</option><option value="U19B">U19B</option><option value="-">Hors table</option></select></div>
+      <div><label for="fBoat">Bateau</label><select id="fBoat"><option value="">Tous</option><option>1x</option><option>2x</option><option>2-</option><option>4x</option><option>4-</option><option>8+</option></select></div>
+      <div style="flex:1 1 200px"><label for="fText">Rechercher un équipage</label><input type="text" id="fText" placeholder="Club, région, nom…"></div>
+    </div>
+    <div class="summary" id="summary"></div>
+    <div class="corr" id="corr" hidden></div>
+    <div class="legend"><span class="na">Écart au meilleur % :</span><span class="pct p-top">0 à 2 %</span><span class="pct p-mid">2 à 4 %</span><span class="pct p-low">plus de 4 %</span></div>
+    <div id="out"></div>
+    <div class="btns"></div>
+    <details>
+      <summary>Table des temps pronostics utilisée</summary>
+      <div class="ref" id="ref"></div>
+    </details>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script>
+const PROG = {
+  "1x":{"H SA":"6:28","H U23":"6:34","H U19":"6:42","H U19B":"6:48","F SA":"7:06","F U23":"7:12","F U19":"7:21","F U19B":"7:28"},
+  "2x":{"H SA":"5:57","H U23":"6:02","H U19":"6:10","H U19B":"6:16","F SA":"6:35","F U23":"6:41","F U19":"6:49","F U19B":"6:56"},
+  "4x":{"H SA":"5:30","H U23":"5:35","H U19":"5:42","H U19B":"5:47","F SA":"6:03","F U23":"6:09","F U19":"6:17","F U19B":"6:22"},
+  "2-":{"H SA":"6:06","H U23":"6:12","H U19":"6:19","H U19B":"6:25","F SA":"6:45","F U23":"6:51","F U19":"7:00","F U19B":"7:06"},
+  "4-":{"H SA":"5:35","H U23":"5:40","H U19":"5:47","H U19B":"5:53","F SA":"6:12","F U23":"6:18","F U19":"6:26","F U19B":"6:31"},
+  "8+":{"H SA":"5:16","H U23":"5:21","H U19":"5:28","H U19B":"5:33","F SA":"5:51","F U23":"5:56","F U19":"6:04","F U19B":"6:09","M SA":"5:34"}
+};
+const BOATS = Object.keys(PROG);
+const CATS = ["H SA","H U23","H U19","H U19B","F SA","F U23","F U19","F U19B","M SA"];
+const hasProg=(b,c)=>!!(PROG[b]&&PROG[b][c]);
+const FB = "https://crewtimer-results.firebaseio.com/results/";
+const BR = "host:claude_browser";
+
+// Données fictives au format CrewTimer, affichées avant le premier chargement
+const SAMPLE = {regattaInfo:{Title:"Régate d'exemple (données fictives)"}, results:[
+  {EventNum:"1",Event:"1 un de couple homme sénior FA",Day:"Samedi",entries:[
+    {Crew:"AC Nantes",Stroke:"DUPONT",EventAbbrev:"SH1x",AdjTime:"06:58.420",Place:1},
+    {Crew:"RC Angers",Stroke:"LEROUX",EventAbbrev:"SH1x",AdjTime:"07:04.100",Place:2},
+    {Crew:"AV Laval",Stroke:"MARTIN",EventAbbrev:"SH1x",AdjTime:"07:11.870",Place:3}]},
+  {EventNum:"2",Event:"2 quatre de couple U19 femme FA",Day:"Samedi",entries:[
+    {Crew:"CN Tours",Stroke:"BERNARD",EventAbbrev:"U19F4x",AdjTime:"06:51.050",Place:1},
+    {Crew:"AC Cholet",Stroke:"ROBIN",EventAbbrev:"U19F4x",AdjTime:"07:02.630",Place:2}]},
+  {EventNum:"3",Event:"3 huit de pointe homme sénior 500m FA",Day:"Dimanche",entries:[
+    {Crew:"Université de Nantes",Stroke:"PETIT",EventAbbrev:"SH8+",AdjTime:"01:24.800",Place:1},
+    {Crew:"RC Angers",Stroke:"GARNIER",EventAbbrev:"SH8+",AdjTime:"01:27.310",Place:2}]},
+  {EventNum:"4",Event:"4 deux de couple femme U23 FA",Day:"Dimanche",entries:[
+    {Crew:"SN La Rochelle",Stroke:"FAURE",EventAbbrev:"U23F2x",AdjTime:"07:18.900",Place:1},
+    {Crew:"AC Nantes",Stroke:"MOREAU",EventAbbrev:"U23F2x",AdjTime:"",Place:"",PenaltyCode:"DNS"}]}
+]};
+
+const $ = s => document.querySelector(s);
+let RAW = SAMPLE, isSample = true, view = "race", sortKey = "pct", sortDir = -1;
+let overrides = {}, mcp = null, tabId = null, timer = null, busy = false, regId = null, seen = new Set(), firstLoad = true;
+
+function toSec(t){
+  const m = String(t||"").trim().replace(",",".").match(/^(?:(\d{1,2}):)?(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/);
+  if(!m) return null;
+  return (m[1]?+m[1]*3600:0) + (+m[2])*60 + (+m[3]);
+}
+/* Allure moyenne au 500 m, au dixième */
+function paceTxt(sec,d){ return sec&&d ? fmt(sec/d*500,1) : `<span class="na">—</span>`; }
+function fmt(sec,dec=2){
+  if(sec==null||!isFinite(sec)) return "—";
+  const neg=sec<0; sec=Math.abs(sec);
+  const m=Math.floor(sec/60), s=sec-m*60;
+  return (neg?"−":"")+m+":"+s.toFixed(dec).padStart(dec?3+dec:2,"0");
+}
+const pctTxt = p => p.toFixed(2).replace(".",",")+" %";
+function esc(s){ return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+/* Couleur du % selon l'écart au meilleur % (de la course, ou du classement) : vert ≤ 2 %, jaune 2 à 4 %, rouge > 4 % */
+function band(p,best){ const g=(best==null?p:best)-p; return g<=2.0001?"p-top":g<=4.0001?"p-mid":"p-low"; }
+function bestPct(rows){ const v=rows.map(r=>r.pct).filter(p=>p!=null); return v.length?Math.max(...v):null; }
+
+/* Code d'épreuve CrewTimer → bateau + catégorie de la table */
+function decode(abbrev, eventName){
+  const s = String(abbrev||"").replace(/\s/g,"").toUpperCase();
+  let m = s.match(/^(U23|U19B|U19|U17|U15|J1[5-8]|S|SA|M\d*|V)?([HFM])(\d)(X\+?|-|\+)$/);
+  let age=null, g=null, boat=null;
+  if(m){
+    const a=m[1]||"S";
+    age = a==="U23"?"U23": a==="U19B"?"U19B": (a==="U19"||a==="J18"||a==="J17")?"U19": (a==="S"||a==="SA")?"SA": (a==="U17"||a==="J16"||a==="J15")?"U17": "autre";
+    g = m[2]; boat = (m[3]+m[4].toLowerCase()).replace("x+","x");
+  } else {
+    const n = String(eventName||"").toLowerCase();
+    if(/un de couple|une? rameu(r|se) en couple/.test(n)) boat="1x";
+    else if(/deux.*couple/.test(n)) boat="2x"; else if(/quatre.*couple/.test(n)) boat="4x";
+    else if(/huit/.test(n)) boat="8+"; else if(/deux.*pointe|deux sans/.test(n)) boat="2-"; else if(/quatre.*pointe|quatre sans/.test(n)) boat="4-";
+    g = /mixte/.test(n)?"M":/femme|dame/.test(n)?"F":/homme/.test(n)?"H":null;
+    age = /u23/.test(n)?"U23":/u19/.test(n)?"U19":/u17/.test(n)?"U17":/s[ée]nior/.test(n)?"SA":null;
+  }
+  return {age,g,boat};
+}
+function distOf(name){
+  const m = String(name||"").match(/(\d{3,4})\s?m\b/i);
+  return m ? +m[1] : (+$("#dist").value||2000);
+}
+/* Rameurs identifiés U23 dans la colonne Stroke, ex. « NOUVEL(-23) Raphaël » : dans une épreuve senior, l'équipage passe au pronostic U23 si tous ses rameurs sont marqués -23 */
+function u23Of(e,d){
+  if(!d||(d.age&&d.age!=="SA")) return d;
+  return isU23(e) ? {...d, age:"U23"} : d;
+}
+/* Équipage U23 : marqueurs « (-23) », « (S-23) » ou « (U23) » dans la colonne Stroke ; les plus jeunes (J18, J17…) n'empêchent pas le U23, un « (S) » ou « (SA) » si */
+function isU23(e){
+  const tags=[...String(e.Stroke||"").matchAll(/\(\s*([^()]{1,5}?)\s*\)/g)].map(m=>m[1].toUpperCase().replace(/\s/g,"")).filter(t=>/^(-23|U23|S-23|SA|S|J\d\d|-?\d\d|U\d\d|M[A-K]?|V\d*)$/.test(t));
+  const young=t=>/^(-23|U23|S-23|J\d\d|U(1\d|2[0-3])|-(1\d|2[0-3]))$/.test(t);
+  if(tags.length) return tags.every(young)&&tags.some(t=>/23$/.test(t));
+  /* sans marqueur : rameurs U23 connus (fiches Chronos du Pôle). L'équipage passe en U23 si tous ses rameurs listés sont connus U23 */
+  const src=String(e.Stroke||"").trim()||String(e.Crew||"").split(":").slice(1).join(":");
+  const segs=src.split(/[\/,;+&]| - /).map(nrm).filter(s=>/[a-z]{2}/.test(s));
+  return !!segs.length&&segs.every(s=>U23_KNOWN.some(([n,p])=>s.includes(n)&&s.includes(p)));
+}
+/* Une catégorie Senior (détectée ou corrigée à la main) passe en U23 pour un équipage identifié U23 */
+function promoU23(e,boat,cat){ return cat&&/ SA$/.test(cat)&&isU23(e)&&hasProg(boat,cat.replace(/SA$/,"U23")) ? cat.replace(/SA$/,"U23") : cat; }
+const nrm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const U23_KNOWN=[["delacommune","albin"],["yvinec","camille"],["faye","clement"],["boury","jeanne"],["pividori","kassandra"],["bouchikhi","lilya"],["hofland","lina"],["phillipe","lou"],["marchand","lucie"],["khaloua","mael"],["nouvel","raphael"]];
+function catFor(d){
+  let g=d.g, age=d.age;
+  if(age==="U17"){ if(!$("#u17").value) return null; age=$("#u17").value; }
+  if(g==="M"){ if(age&&hasProg(d.boat,"M "+age)) return "M "+age; if(!$("#mix").value) return null; g=$("#mix").value; }
+  if(!g||!age||!CATS.includes(g+" "+age)||(d.boat&&!hasProg(d.boat,g+" "+age))) return null;
+  return g+" "+age;
+}
+
+/* Normalisation des courses */
+/* Recherche d'une catégorie dans un texte libre (colonne Nage, Équipage…) */
+function decodeText(txt){
+  const t=String(txt||"");
+  const m=t.match(/(?<![A-Za-z0-9])(U23|U19B|U19|U17|U15|J1[5-8]|SA|S|M\d*|V)?\s?([HFM])\s?(\d)\s?(x\+?|-|\+)(?![A-Za-z0-9])/i);
+  if(m) return decode((m[1]||"")+m[2]+m[3]+m[4],"");
+  const d=decode("",t);
+  const u=t.toUpperCase();
+  if(!d.age){ d.age=/\bU23\b/.test(u)?"U23":/\bU19B\b/.test(u)?"U19B":/\b(U19|J18|J17)\b/.test(u)?"U19":/\b(U17|J16|J15)\b/.test(u)?"U17":/\b(SA|SENIOR|SÉNIOR)\b/.test(u)?"SA":null; }
+  if(!d.g){ d.g=/\b(MIXTE|MIXED|MIX)\b/.test(u)?"M":/\b(WOMEN'?S?|FEMMES?|DAMES?|FILLES?|GIRLS?)\b/.test(u)?"F":/\b(MEN'?S?|HOMMES?|GARCONS?|GARÇONS?|BOYS?)\b/.test(u)?"H":null; }
+  if(!d.g){ const k=u.match(/\b(?:U\d\d|SA|S|J1\d)?\s?([HFM])\b/); if(k) d.g=k[1]; }
+  if(!d.age && /\b(JUNIORS?|JUN)\b/.test(u)) d.age="U19";
+  if(!d.boat){ const b=t.match(/(?<![A-Za-z0-9])([1248])\s?(x\+?|-|\+)(?![A-Za-z0-9])/i); if(b) d.boat=(b[1]+b[2].toLowerCase()).replace("x+","x"); }
+  return d;
+}
+function merge(...ds){ const o={age:null,g:null,boat:null}; ds.forEach(d=>{ if(!d) return; for(const k in o) if(!o[k]&&d[k]) o[k]=d[k]; }); return o; }
+function sourceDecode(e, ev, abEv){
+  const w=$("#where").value;
+  const fromAb=decode(e.EventAbbrev||abEv,""), fromEv=decode("",ev.Event);
+  if(w==="abbrev") return merge(fromAb, fromEv);
+  if(w==="event") return merge(decodeText(e.Event||ev.Event), decodeText(ev.Event), fromAb);
+  if(w==="stroke") return merge(decodeText(e.Stroke), fromAb, fromEv);
+  if(w==="crew") return merge(decodeText(e.Crew||e.CrewAbbrev), fromAb, fromEv);
+  return merge(e.EventAbbrev||abEv?fromAb:null, fromEv, decodeText(e.Stroke), decodeText(e.Crew));
+}
+/* Libellé au format des codes d'épreuve (SH1x, U19F4x…) pour comparer d'un coup d'œil avec l'origine */
+function catLabel(b,c){
+  if(!b||!c) return "hors table";
+  const [g,a]=c.split(" ");
+  return (a==="SA"?"S":a==="U19B"?"U19B ":a)+g+b;
+}
+
+/* Normalisation des courses : la catégorie est déterminée équipage par équipage */
+/* Temps de passage intermédiaire (point de chronométrage CrewTimer, ex. « 1000m ») */
+function splitOf(e,wp){ if(!wp) return null; const t=e["G_"+wp+"_time"] ?? (e.W&&e.W[wp]); return t?toSec(t):null; }
+function waypoints(){
+  const set=new Set(); const res=Array.isArray(RAW.results)?RAW.results:Object.values(RAW.results||{});
+  String(RAW.regattaInfo?.Waypoints||"").split(",").map(x=>x.trim()).filter(Boolean).forEach(w=>set.add(w));
+  res.filter(Boolean).forEach(ev=>(ev.entries||[]).filter(Boolean).forEach(e=>{ Object.keys(e).forEach(k=>{ const m=k.match(/^G_(.+)_time$/); if(m) set.add(m[1]); }); if(e.W) Object.keys(e.W).forEach(k=>set.add(k)); }));
+  return [...set].filter(w=>!/^(finish|start)$/i.test(w)&&!/backup/i.test(w));
+}
+function wpsShown(){ const v=$("#splitWp").value; return v==="*" ? waypoints().sort((a,b)=>wpDist(a)-wpDist(b)) : v ? [v] : []; }
+function wpDist(wp,dist){ const m=String(wp).match(/(\d{3,4})\s*m?/i); return m?+m[1]:Math.round((dist||2000)/2); }
+function fillWp(){
+  const sel=$("#splitWp"), cur=sel.value||sel.dataset.want||"", wps=waypoints();
+  sel.innerHTML = wps.length ? `<option value="*">Tous (${esc(wps.join(", "))})</option><option value="">Aucun</option>`+wps.map(w=>`<option value="${esc(w)}">Seulement ${esc(w)}</option>`).join("") : `<option value="">Aucun passage dans cette régate</option>`;
+  sel.value = (cur==="*"||wps.includes(cur)||(cur===""&&sel.dataset.touched)) && wps.length ? cur : (wps.length?"*":"");
+  sel.disabled = !wps.length;
+}
+function build(){
+  const results = Array.isArray(RAW.results) ? RAW.results : Object.values(RAW.results||{});
+  return results.filter(Boolean).map(ev=>{
+    const entries = (ev.entries||[]).filter(Boolean);
+    const ab = entries.map(e=>e.EventAbbrev).find(Boolean)||"";
+    const key = String(ev.EventNum||ev.Event);
+    const o = overrides[key]||{};
+    const dist = o.dist || distOf(ev.Event);
+    const rows = entries.map((e,i)=>{
+      const d = u23Of(e, sourceDecode(e, ev, ab));
+      const code = codeOf(e, ev, ab), ok = code || "#"+key+"|"+i, ro = codeOv[ok]||{};
+      const autoBoat = o.boat!==undefined ? o.boat : d.boat, autoCat = o.cat!==undefined ? o.cat : catFor(d);
+      const boat = ro.boat!==undefined ? ro.boat : autoBoat;
+      const cat = promoU23(e, boat, ro.cat!==undefined ? ro.cat : autoCat);
+      const base = boat&&cat&&PROG[boat]? toSec(PROG[boat][cat]) : null;
+      const prog = base ? base*dist/2000 : null;
+      const sec = toSec(e.AdjTime||e.RawTime);
+      const splits = wpsShown().map(wp=>({wp, m:wpDist(wp,dist), s:splitOf(e,wp)})).filter(x=>x.s && (!sec || x.s < sec) && x.m < dist);
+      const pct = sec&&prog ? prog/sec*100 : null;
+      return {crew:e.Crew||e.CrewAbbrev||"", stroke:e.Stroke||"", place:e.Place||"", pen:e.PenaltyCode||"", boat, cat, base, dist, prog, sec, pct, gap: sec&&prog? sec-prog : null, ok, code, autoBoat, autoCat, edited: ro.boat!==undefined||ro.cat!==undefined, splits, rid:key+"|"+i};
+    });
+    rows.sort((a,b)=>(a.sec==null)-(b.sec==null) || (a.sec||0)-(b.sec||0));
+    const wpCols=[...new Set(rows.flatMap(r=>r.splits.map(x=>x.wp)))].sort((a,b)=>wpDist(a)-wpDist(b));
+    wpCols.forEach(wp=>{ rows.filter(r=>r.splits.some(x=>x.wp===wp)).sort((a,b)=>a.splits.find(x=>x.wp===wp).s-b.splits.find(x=>x.wp===wp).s).forEach((r,i)=>{ r.splits.find(x=>x.wp===wp).rank=i+1; }); });
+    const winSec=rows.find(r=>r.sec)?.sec; rows.forEach(r=>{ r.gapWin = r.sec&&winSec ? r.sec-winSec : null; });
+    const most=(k)=>{ const c={}; rows.forEach(r=>{ if(r[k]) c[r[k]]=(c[r[k]]||0)+1; }); return Object.keys(c).sort((x,y)=>c[y]-c[x])[0]||null; };
+    const boat = o.boat!==undefined ? o.boat : most("boat");
+    const cat = o.cat!==undefined ? o.cat : most("cat");
+    const progs=[...new Set(rows.map(r=>r.prog).filter(Boolean))];
+    const mixed = new Set(rows.map(r=>catLabel(r.boat,r.cat))).size>1;
+    const startAct = ev.StartAct || entries.map(x=>x.G_Start_time_raw||x.S_time).filter(Boolean).sort()[0] || "";
+    return {wpCols, key, num:ev.EventNum||"", name:ev.Event||"", day:ev.Day||"", start:ev.Start||"", startAct, abbrev:ab, boat, cat, dist, distEd:!!o.dist, prog: progs.length===1?progs[0]:null, base: progs.length===1?(rows.find(r=>r.prog)||{}).base:null, mixed, rows};
+  });
+}
+
+/* Nom court de l'épreuve : « 1er 2k » pour « 1er 2k - U19H4x / SM8+ », sinon le code d'épreuve */
+function epLabel(e){
+  const n=String(e.name||"").replace(/^\s*\d+\s*/,"").trim(), i=n.search(/\s[-–]\s/);
+  if(i>0) return n.slice(0,i).trim();
+  return String(e.abbrev||"").trim().replace(/\s*-$/,"")||n;
+}
+/* Comparaison : sélection propre à chaque visiteur, jamais publiée */
+const CMP=new Set();
+function cmpCell(r){ return ""; return `<td class="cmpc"><input type="checkbox" class="cmp" data-r="${esc(r.rid)}"${CMP.has(r.rid)?" checked":""} aria-label="Comparer ${esc(r.crew)}"></td>`; }
+function cmpUi(){ return;
+  const n=CMP.size;
+  $("#cmpCount").textContent = n ? `${n} équipage${n>1?"s":""} coché${n>1?"s":""}` : "Cochez des équipages dans les tableaux pour les comparer.";
+  $("#cmpClear").hidden=!n;
+  if(!n && $("#cmpOnly").checked) $("#cmpOnly").checked=false;
+}
+function filtered(evs,keepOff){
+  if(!keepOff) evs=evs.filter(e=>!EXP_OFF.has(e.key));
+  const day=$("#fDay").value, c=$("#fCat").value, q=$("#fText").value.trim().toLowerCase();
+  const sx=$("#fSex").value, ag=$("#fAge").value, bt=$("#fBoat").value, only=false;
+  const keepRow=r=>(!sx||(r.cat?r.cat[0]===sx:false))&&(!ag||(ag==="-"?!r.cat:(r.cat&&r.cat.split(" ")[1]===ag)))&&(!bt||r.boat===bt)&&(!only||CMP.has(r.rid));
+  if(sx||ag||bt||only) evs=evs.map(e=>({...e,rows:e.rows.filter(keepRow)})).filter(e=>e.rows.length);
+  return evs.filter(e=>(!day||String(e.day).trim()===day)&&(!c||epLabel(e)===c)).map(e=>q?{...e,rows:e.rows.filter(r=>(r.crew+" "+r.stroke).toLowerCase().includes(q))}:e).filter(e=>!q||e.rows.length);
+}
+
+function fillFilters(evs){
+  const keep = (sel, vals)=>{ const cur=sel.value||sel.dataset.want||""; sel.innerHTML='<option value="">Toutes</option>'+vals.map(v=>`<option value="${esc(v)}"${v===cur?" selected":""}>${esc(v)}</option>`).join(""); };
+  keep($("#fDay"), [...new Set(evs.map(e=>String(e.day||"").trim()).filter(Boolean))]);
+  keep($("#fCat"), [...new Set(evs.map(epLabel).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr",{numeric:true})));
+}
+
+let LAST=[], codeOv={};
+/* Code de catégorie lu pour un équipage : une correction s'applique à tous ceux qui portent le même code */
+const TOKEN_RE=/(?<![A-Za-z0-9])([A-Z]{0,3}\d{0,2}\s?[HFM]\s?\d\s?(?:X\+?|-|\+))(?![A-Za-z0-9])/i;
+function normCode(t){ return String(t||"").toUpperCase().replace(/\s+/g,""); }
+function cleanEvent(n){ return String(n||"").replace(/^\s*\d+\s*/,"").replace(/\s+(H|FA|FB|FC|FD|F|S|SF|R|DF|QF|SÉRIE|SERIE)\s*\d*$/i,"").trim().toUpperCase(); }
+function codeOf(e, ev, ab){
+  const w=$("#where").value, tok=t=>{ const m=String(t||"").match(TOKEN_RE); return m?normCode(m[1]):""; };
+  if(w==="stroke") return tok(e.Stroke) || normCode(e.Stroke);
+  if(w==="crew") return tok(e.Crew||e.CrewAbbrev);
+  if(w==="event") return tok(e.Event||ev.Event) || cleanEvent(e.Event||ev.Event);
+  if(w==="abbrev") return normCode(e.EventAbbrev||ab);
+  return normCode(e.EventAbbrev||ab) || tok(ev.Event) || cleanEvent(ev.Event);
+}
+/* Ajustements mémorisés par régate sur cet appareil : corrections de catégorie (codeOv) et réglages par course — bateau, catégorie, distance (overrides) */
+function saveOv(){ try{ if(regId){ localStorage.setItem("ct-ov-"+regId, JSON.stringify(codeOv)); localStorage.setItem("ct-evov-"+regId, JSON.stringify(overrides)); } }catch(e){} }
+function loadOv(){ try{ codeOv = (regId && JSON.parse(localStorage.getItem("ct-ov-"+regId)||"{}")) || {}; }catch(e){ codeOv={}; } try{ overrides = (regId && JSON.parse(localStorage.getItem("ct-evov-"+regId)||"{}")) || {}; }catch(e){ overrides={}; } }
+/* Sélecteurs de catégorie pronostic de chaque équipage */
+function progTxt(base,prog,dist){
+  const b=fmt(base,0);
+  return dist===2000 ? `2K ${b}` : `2K ${b} → ${fmt(prog,prog%1?1:0)} sur ${dist} m`;
+}
+function origOf(r){ return r.code&&!r.code.startsWith("#")?r.code:(r.ev?r.ev.abbrev:""); }
+function rowSel(r){
+  const ov=codeOv[r.ok]||{};
+  const isAuto = ov.boat===undefined && ov.cat===undefined;
+  const cur = r.boat&&r.cat ? r.boat+"|"+r.cat : "";
+  const groups = BOATS.map(b=>`<optgroup label="${b}">${CATS.filter(c=>hasProg(b,c)).map(c=>{ const v=b+"|"+c; return `<option value="${v}"${!isAuto&&v===cur?" selected":""}>${catLabel(b,c)} · ${c.replace(" "," ")}</option>`; }).join("")}</optgroup>`).join("");
+  const opts = `<option value="*"${isAuto?" selected":""}>Auto : ${esc(catLabel(r.autoBoat,r.autoCat))}</option><option value=""${!isAuto&&!cur?" selected":""}>Hors table</option>`+groups;
+  const scope = r.code ? `tous les ${r.code}` : "cet équipage";
+  return `<span class="rsel${r.edited?" edited":""}" title="Une modification s'applique à ${esc(scope)}"><select data-ok="${esc(r.ok)}" data-f="both" aria-label="Catégorie pronostic pour ${esc(scope)}">${opts}</select>${r.prog?`<span class="pt">${progTxt(r.base,r.prog,r.dist)}</span>`:""}</span>`;
+}
+function renderCorr(){
+  const keys=Object.keys(codeOv);
+  const box=$("#corr");
+  if(!keys.length){ box.hidden=true; box.innerHTML=""; return; }
+  box.hidden=false;
+  box.innerHTML=`<span class="lbl" style="margin:0">Corrections appliquées</span>`+keys.map(k=>{
+    const o=codeOv[k], name=k.startsWith("#")?"un équipage":k;
+    const to=(o.boat&&o.cat)?catLabel(o.boat,o.cat)+" ("+o.boat+" "+o.cat+")":(o.boat===null||o.cat===null)?"hors table":[o.boat,o.cat].filter(Boolean).join(" ");
+    return `<span class="corr-chip"><b>${esc(name)}</b> → ${esc(to)} <button type="button" class="x" data-del="${esc(k)}" aria-label="Annuler la correction ${esc(name)}">×</button></span>`;
+  }).join("")+`<button type="button" class="ghost small" data-del="*">Tout annuler</button>`;
+}
+/* Tableau d'une course : passages (cumul + rang, partiel dessous), arrivée, écart au 1er, % FFAviron */
+function rankBadge(k){ return k?`<span class="rk${k===1?" r1":""}" title="${k}${k===1?"er":"e"} à ce passage">${k}</span>`:""; }
+function raceHead(e){
+  const P=e.wpCols, two=P.length>0;
+  const sub=two?`<tr class="sub">${P.map((wp,j)=>`<th class="r${j?"":" sep"}">${esc(wp.replace(/(\d)\s*m$/i,"$1 m"))}</th>`).join("")}<th class="r sep">Temps</th><th class="r gapc" title="Écart au 1er">Écart</th></tr>`:"";
+  return `<thead><tr><th class="r"${two?' rowspan="2"':""}>Pl.</th><th${two?' rowspan="2"':""}>Équipage</th>${two?`<th class="grp sep" colspan="${P.length}">Passages <span class="na">cumul · partiel</span></th><th class="grp sep" colspan="2">Arrivée</th>`:`<th class="r">Temps</th><th class="r gapc" title="Écart au 1er">Écart</th>`}<th class="r"${two?' rowspan="2"':""} title="% FFAviron (pronostic ÷ temps × 100)">%</th><th class="catc"${two?' rowspan="2"':""}>Cat. et tps prono</th><th class="r gapc"${two?' rowspan="2"':""} title="Allure moyenne au 500 m">/500m</th></tr>${sub}</thead>`;
+}
+function raceRow(e,r){
+  const P=e.wpCols;
+  const cells=P.map((wp,j)=>{ const x=r.splits.find(y=>y.wp===wp); const sep=j?"":" sep";
+    if(!x) return `<td class="r${sep}"><span class="na">—</span></td>`;
+    const prev=j?r.splits.find(y=>y.wp===P[j-1]):null;
+    return `<td class="r t${sep}"><div class="sp">${rankBadge(x.rank)}${fmt(x.s,1)}</div>${prev?`<div class="part">${fmt(x.s-prev.s,1)}</div>`:""}</td>`; }).join("");
+  const last=r.splits.length?r.splits[r.splits.length-1]:null;
+  const fin=r.sec?`<div class="sp">${fmt(r.sec)}</div>${last?`<div class="part">${fmt(r.sec-last.s,1)}</div>`:""}`:`<span class="na">${esc(r.pen||"en attente")}</span>`;
+  const gap=r.gapWin==null?`<span class="na">—</span>`:r.gapWin<0.0005?`<span class="lead">1er</span>`:"+"+fmt(r.gapWin);
+  return `<tr${CMP.has(r.rid)?' class="picked"':""}>${cmpCell(r)}<td class="r t">${esc(r.place)}</td><td class="crewc">${esc(r.crew)}${r.stroke&&r.stroke!==r.crew&&!String(r.crew).toUpperCase().includes(String(r.stroke).toUpperCase())?`<div class="na">${esc(r.stroke)}</div>`:""}</td>${cells}<td class="r t${P.length?" sep":""}">${fin}</td><td class="r t">${gap}</td>
+        <td class="r">${r.pct!=null?`<span class="pct ${band(r.pct,bestPct(e.rows))}">${pctTxt(r.pct)}</span>`:`<span class="na">—</span>`}</td><td>${rowSel(r)}</td><td class="r t">${paceTxt(r.sec,r.dist||e.dist)}</td></tr>`;
+}
+function render(){
+  fillWp(); const all = build(); LAST = all; renderCorr(); renderTimeline(); renderExp();
+  fillFilters(all);
+  const evs = filtered(all), evsAll = filtered(all,true);
+  $("#regName").textContent = RAW.regattaInfo?.Title || RAW.regattaInfo?.Name || "Résultats";
+  $("#sampleTag").hidden = !isSample;
+  const rows = evs.flatMap(e=>e.rows.map(r=>({...r, ev:e})));
+  const ok = rows.filter(r=>r.pct!=null);
+  const best = ok.reduce((m,r)=>!m||r.pct>m.pct?r:m,null);
+  const timed = rows.filter(r=>r.sec).length;
+  $("#summary").innerHTML = `<span>Courses <b>${evs.length}</b></span><span>Temps lus <b>${timed}</b></span><span>Avec % <b>${ok.length}</b></span>`
+    + (best?`<span>Meilleur <b>${pctTxt(best.pct)}</b> · ${esc(best.crew)} (${esc(best.ev.abbrev)})</span>`:"");
+  const out=$("#out");
+  if(!evs.length&&(view!=="race"||!evsAll.length)){ out.innerHTML=`<div class="empty">${evsAll.length?"Toutes les courses sont décochées (bouton « Courses affichées »).":"Aucune course ne correspond aux filtres."}</div>`; return; }
+  if(view==="race"){
+    out.className="races";
+    out.innerHTML = evsAll.map(e=>{
+      if(EXP_OFF.has(e.key)) return `<article class="race off"><div class="race-h"><label class="pick" title="Inclure cette course dans l'affichage et l'export"><input type="checkbox" class="sel-pick" data-k="${esc(e.key)}" aria-label="Afficher la course ${esc(e.num)}"></label><span class="race-num">${esc(e.num)}</span><span class="race-name">${esc(e.name.replace(/^\d+\s*/,""))}</span><span class="na">masquée · exclue de l'export</span></div></article>`;
+      const isNew = !firstLoad && !isSample && !seen.has(e.key+"|"+e.rows.filter(r=>r.sec).length) && e.rows.some(r=>r.sec);
+      return `<article class="race${isNew?" new":""}">
+      <div class="race-h">
+        <label class="pick" title="Décocher pour masquer cette course et l'exclure de l'export"><input type="checkbox" class="sel-pick" data-k="${esc(e.key)}" checked aria-label="Afficher la course ${esc(e.num)}"></label>
+        <span class="race-num">${esc(e.num)}</span>
+        <span class="race-name">${esc(e.name.replace(/^\d+\s*/,""))}</span>
+        <span class="race-meta">
+          ${e.abbrev?`<span class="tag">${esc(e.abbrev)}</span>`:""}
+          <label class="distin${e.distEd?" edited":""}" title="Distance de la course : modifiable si elle n'est pas la même pour toutes les épreuves"><input type="number" data-k="${esc(e.key)}" data-f="dist" value="${e.dist}" min="100" max="20000" step="50" inputmode="numeric" aria-label="Distance de la course ${esc(e.num)} en mètres"> m</label>
+          ${wxChip(e)}
+          <select data-k="${esc(e.key)}" data-f="boat" aria-label="Bateau">${['<option value="">Bateau ?</option>',...BOATS.map(b=>`<option${b===e.boat?" selected":""}>${b}</option>`)].join("")}</select>
+          <select data-k="${esc(e.key)}" data-f="cat" aria-label="Catégorie">${['<option value="">Hors table</option>',...CATS.filter(c=>!e.boat||hasProg(e.boat,c)).map(c=>`<option${c===e.cat?" selected":""}>${c}</option>`)].join("")}</select>
+          <span>Pronostic <b class="t">${e.mixed?"selon l'équipage":e.prog?progTxt(e.base,e.prog,e.dist):"—"}</b></span>
+        </span>
+      </div>
+      <div class="tablewrap"><table class="res">${raceHead(e)}<tbody>
+      ${e.rows.map(r=>raceRow(e,r)).join("")}
+      </tbody></table></div></article>`;}).join("");
+  } else {
+    out.className="";
+    const keyf = {pct:r=>r.pct, sec:r=>r.sec, crew:r=>r.crew, ev:r=>+r.ev.num||0, ep:r=>epLabel(r.ev), cat:r=>catLabel(r.boat,r.cat), orig:r=>origOf(r), wind:r=>{ const o=wxAt(r.ev); return o?(o.head!=null?o.head:o.ws):null; }};
+    const list = rows.filter(r=>r.sec).sort((a,b)=>{ const x=keyf[sortKey](a), y=keyf[sortKey](b);
+      if(x==null&&y==null) return 0; if(x==null) return 1; if(y==null) return -1;
+      return (typeof x==="string"?x.localeCompare(y,"fr"):x-y)*sortDir; });
+    const topPct=Math.max(-Infinity,...list.map(r=>r.pct).filter(p=>p!=null));
+    const gapTxt=p=>p==null||!isFinite(topPct)?`<span class="na">—</span>`:Math.abs(p-topPct)<0.005?`<span class="na">en tête</span>`:`−${(topPct-p).toFixed(2).replace(".",",")} %`;
+    const th=(k,l,r)=>`<th data-s="${k}"${r?' class="r"':""}${k===sortKey?` aria-sort="${sortDir>0?"ascending":"descending"}"`:""}>${l}${k===sortKey?(sortDir>0?" ↑":" ↓"):""}</th>`;
+    out.innerHTML = `<div class="race"><div class="tablewrap"><table class="flat"><thead><tr><th class="r">#</th>${th("crew","Équipage")}${th("orig","Catégorie d'origine")}${th("ep","Épreuve")}${th("ev","Course",1)}${th("wind","Vent")}${th("sec","Temps",1)}${th("pct","% pronostic",1)}<th class="r" title="Écart de % avec le meilleur pourcentage du classement affiché">Écart %</th>${th("cat","Cat. et tps prono")}<th class="r" title="Allure moyenne au 500 m">/500m</th></tr></thead><tbody>
+      ${list.map((r,i)=>`<tr${CMP.has(r.rid)?' class="picked"':""}>${cmpCell(r)}<td class="r t">${i+1}</td><td>${esc(r.crew)}${r.stroke?` <span class="na">· ${esc(r.stroke)}</span>`:""}</td><td><span class="tag">${esc(origOf(r)||"?")}</span></td><td><span class="tag">${esc(epLabel(r.ev))}</span></td><td class="r t">${esc(r.ev.num)}</td><td>${wxShortHtml(r.ev)}</td><td class="r t">${fmt(r.sec)}</td>
+      <td class="r">${r.pct!=null?`<span class="pct ${band(r.pct,topPct)}">${pctTxt(r.pct)}</span>`:`<span class="na">hors table</span>`}</td><td class="r t">${gapTxt(r.pct)}</td><td>${rowSel(r)}</td><td class="r t">${paceTxt(r.sec,r.dist||r.ev.dist)}</td></tr>`).join("")}
+      </tbody></table></div></div>`;
+    out.querySelectorAll("th[data-s]").forEach(h=>h.onclick=()=>{ const k=h.dataset.s; if(k===sortKey) sortDir*=-1; else {sortKey=k; sortDir=k==="pct"?-1:1;} render(); });
+  }
+  if(!isSample){ all.forEach(e=>seen.add(e.key+"|"+e.rows.filter(r=>r.sec).length)); firstLoad=false; }
+}
+
+$("#corr").addEventListener("click",e=>{
+  const b=e.target.closest("[data-del]"); if(!b) return;
+  if(b.dataset.del==="*") codeOv={}; else delete codeOv[b.dataset.del];
+  saveOv(); render();
+});
+$("#out").addEventListener("change",e=>{
+  if(e.target.classList&&e.target.classList.contains("cmp")){ const id=e.target.dataset.r; if(e.target.checked) CMP.add(id); else CMP.delete(id); e.target.closest("tr").classList.toggle("picked",e.target.checked); cmpUi(); if($("#cmpOnly").checked) render(); return; }
+  const s=e.target; if(s.tagName!=="SELECT"&&!(s.tagName==="INPUT"&&s.dataset.f==="dist")) return;
+  if(s.dataset.ok){
+    const o=codeOv[s.dataset.ok]||{};
+    if(s.dataset.f==="both"){
+      if(s.value==="*"){ delete o.boat; delete o.cat; }
+      else if(!s.value){ o.boat=null; o.cat=null; }
+      else { const [b,c]=s.value.split("|"); o.boat=b; o.cat=c; }
+    } else if(s.value==="*") delete o[s.dataset.f]; else o[s.dataset.f]=s.value||null;
+    if(Object.keys(o).length) codeOv[s.dataset.ok]=o; else delete codeOv[s.dataset.ok];
+    saveOv(); render(); return;
+  }
+  if(!s.dataset.k) return;
+  if(s.dataset.f==="dist"){ const v=Math.round(+s.value); const o=overrides[s.dataset.k]||(overrides[s.dataset.k]={}); if(v>=100&&v<=20000) o.dist=v; else delete o.dist; saveOv(); render(); return; }
+  overrides[s.dataset.k]=Object.assign(overrides[s.dataset.k]||{},{[s.dataset.f]:s.value||null});
+  Object.keys(codeOv).forEach(k=>{ if(k.startsWith("#"+s.dataset.k+"|")) delete codeOv[k]; }); saveOv();
+  render();
+});
+
+/* Lecture CrewTimer via le navigateur intégré de l'app Claude */
+function regattaId(u){
+  const m = String(u).match(/(?:regatta\/|^)(r\d+)\b/i) || String(u).match(/\b(r\d{3,})\b/i);
+  return m ? m[1].toLowerCase() : null;
+}
+function setStatus(text, cls){ const st=$("#status"); st.className="status"+(cls?" "+cls:""); $("#stText").innerHTML=text; }
+function showMsg(html){ const m=$("#msg"); m.hidden=!html; m.innerHTML=html||""; }
+function textOf(res){
+  if(typeof res?.payload==="string") return res.payload;
+  const b=(res?.content||[]).find(c=>c.type==="text"); return b?b.text:"";
+}
+function extractJson(t){
+  let s=t; const i=s.indexOf("\n---\n"); if(i>=0) s=s.slice(i+5);
+  const j=s.lastIndexOf("\n\nTab Context"); if(j>=0) s=s.slice(0,j);
+  s=s.trim(); const a=s.indexOf("{"); if(a>0) s=s.slice(a);
+  return JSON.parse(s);
+}
+function errCopy(e){
+  const c=e?.code;
+  if(c==="server_not_connected"||c==="not_granted"||c==="capability_disabled"||c==="capability_removed")
+    return "La lecture automatique passe par le navigateur intégré de l'app Claude : ouvrez cette page dans l'app de bureau Claude, ou utilisez « Coller les données à la main » ci-dessous.";
+  if(c==="not_in_manifest"||c==="approval_required"||c==="cancelled")
+    return "L'accès au navigateur intégré n'a pas été autorisé pour cette page. Cliquez à nouveau sur « Charger » pour qu'il soit redemandé.";
+  if(c==="tool_error") return "Le navigateur n'a pas pu ouvrir la page de données. Si l'app vous demande d'autoriser le site crewtimer-results.firebaseio.com, acceptez-le, puis relancez.";
+  if(c==="server_unavailable") return "L'app Claude ne répond pas pour l'instant (ordinateur en veille ou app fermée ?). Nouvelle tentative au prochain cycle.";
+  return "Lecture impossible pour le moment"+(e?.message?" : "+esc(String(e.message).slice(0,160)):"")+".";
+}
+function getJson(url){ return fetch(url,{cache:"no-store"}).then(r=>r.json()); }
+async function fetchOnce(){
+  if(busy||!regId) return; busy=true;
+  const url = FB+regId+".json";
+  setStatus("Lecture des résultats…", timer?"live":"");
+  try{
+    const r = await fetch(url,{cache:"no-store"});
+    if(r.status===401||r.status===403) throw {message:"régate privée ou introuvable ("+regId+")"};
+    if(!r.ok) throw {message:"le serveur CrewTimer a répondu "+r.status};
+    const data = await r.json();
+    if(data===null) throw {message:"régate introuvable ("+regId+")"};
+    if(!data.results) throw {message:"aucun résultat publié pour "+regId};
+    RAW=data; isSample=false; showMsg("");
+    render(); wxFetch(false);
+    LAST_UPD=Date.now(); clockTick();
+    const t=new Date().toLocaleTimeString("fr-FR");
+    setStatus(timer?`En direct · mis à jour à ${t}${RAW.lastUpdatedEvent?` · dernière course arrivée : n° ${esc(RAW.lastUpdatedEvent)}`:""}`:`Mis à jour à ${t}`, timer?"live":"");
+  }catch(e){
+    setStatus(`<span class="err">Échec de la lecture</span>`);
+    showMsg("Lecture impossible : "+esc(e?.message||"connexion au serveur CrewTimer impossible")+".");
+  }finally{ busy=false; }
+}
+function stopLive(){ clearInterval(timer); timer=null; $("#stop").hidden=true; }
+async function start(){
+  const id = regattaId($("#url").value);
+  if(!id){ showMsg("Lien non reconnu. Il doit ressembler à <code>https://crewtimer.com/regatta/r16431</code>."); return; }
+  if(id!==regId){ overrides={}; seen=new Set(); firstLoad=true; regId=id; loadOv(); }
+  regId=id; stopLive();
+  try{ localStorage.setItem("ct-url",$("#url").value); }catch(e){}
+  const every=+$("#every").value;
+  if(every){ timer=setInterval(fetchOnce, every*1000); $("#stop").hidden=false; }
+  await fetchOnce();
+}
+
+/* ---------- Liste des régates françaises publiées sur CrewTimer ---------- */
+const RS_URL = "https://crewtimer-results.firebaseio.com/rsummary.json";
+const CT = { list: null, loading: null };
+function isFrenchTitle(t) {
+  const s = " " + String(t || "").toLowerCase() + " ";
+  let sc = 0;
+  if (/(r[ée]gat|t[êe]te de rivi|\btdr\b|championnat|\bchpt\b|aviron|\bligue\b|interr[ée]gion|interligue|crit[ée]rium|journ[ée]e|d[ée]fi |animation|contr[ôo]le|s[ée]lection|[ée]tape|jeunes|bateaux|\bcnj\d?\b|\bcj\d\b|matin|apr[èe]s[- ]?midi|apr[èe]m|coupe|challenge|troph[ée]e|course|occitanie|bretagne|normandie|aquitaine|hauts?[- ]de[- ]france|\bhdf\b|\baura\b|\bpdl\b|pays de la loire|[îi]le[- ]de[- ]france|grand est|\blifa\b|\bzno\b|zone (nord|sud|est|ouest)|nord[- ]ouest|sud[- ]ouest|sud[- ]est|nord[- ]est|d[ée]partement|r[ée]gional|beach rowing|aviron de mer|biathlon|tour du |tour des |\bstage\b|\bzone\b|\bmanche\b|rencontre|interclub|\bcdr?\b|\bcd ?\d\d|fran[cç]ais|france)/.test(s)) sc += 2;
+  if (/[\s'’(](du|des|la|le|les|et|aux|sur|au|de)[\s]|[\s(](d|l)['’]/.test(s)) sc += 1;
+  if (/[éèêàçùœûî]/.test(s)) sc += 1;
+  if (/\b(regatta|head of|the|regata|regatas|campeonato|campeonatos|nacional|jornada|prueba|del|scrimmage|invitational|state|university|high school|rodden|championships|trials|canotaje|remo)\b|[åäöñāēīūļņšžčģķ]/.test(s)) sc -= 3;
+  return sc >= 2;
+}
+const ctNorm = x => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+async function ctLoad() {
+  if (CT.list) return CT.list;
+  try { const c = JSON.parse(localStorage.getItem("ct-list") || "null"); if (c && Date.now() - c.at < 6 * 3600e3 && Array.isArray(c.list)) { CT.list = c.list; return CT.list; } } catch (e) {}
+  return CT.loading ||= (async () => {
+    $("#ctMsg").textContent = "Chargement de la liste des régates CrewTimer…";
+    try {
+      const d = await getJson(RS_URL);
+      if (!d || typeof d !== "object") throw { message: "liste vide" };
+      CT.list = Object.entries(d).filter(([, v]) => v && v.Public && isFrenchTitle(v.Title))
+        .map(([k, v]) => ({ id: v.Name || k, t: String(v.Title || k).replace(/\s+/g, " ").trim(), d: v.Date || "", n: +v.NumDays || 1, e: v.NumEntries || null }))
+        .sort((a, b) => b.d.localeCompare(a.d) || a.t.localeCompare(b.t));
+      try { localStorage.setItem("ct-list", JSON.stringify({ at: Date.now(), list: CT.list })); } catch (e) {}
+      $("#ctMsg").textContent = "";
+      return CT.list;
+    } catch (e) { $("#ctMsg").textContent = "Liste des régates indisponible pour le moment : colle le lien CrewTimer ci-dessous."; CT.loading = null; throw e; }
+  })();
+}
+function ctRender() {
+  const sel = $("#ctList"); if (!CT.list) return;
+  const q = ctNorm($("#ctFind").value).trim(), today = new Date().toISOString().slice(0, 10);
+  const end = r => { const x = new Date(r.d + "T12:00:00"); x.setDate(x.getDate() + Math.max(0, r.n - 1)); return x.toISOString().slice(0, 10); };
+  let L = CT.list; if (q) L = L.filter(r => q.split(/\s+/).every(w => ctNorm(r.t + " " + r.d.slice(0, 4)).includes(w)));
+  const now = L.filter(r => r.d <= today && end(r) >= today), up = L.filter(r => r.d > today).reverse(), past = L.filter(r => end(r) < today);
+  const fd = d => d ? d.slice(8, 10) + "/" + d.slice(5, 7) + "/" + d.slice(2, 4) : "";
+  const opt = r => `<option value="${esc(r.id)}"${r.id === regId ? " selected" : ""}>${esc(fd(r.d))} · ${esc(r.t)}</option>`;
+  const grp = (lab, arr, max) => arr.length ? `<optgroup label="${esc(lab)}">${arr.slice(0, max).map(opt).join("")}</optgroup>` : "";
+  sel.innerHTML = `<option value="">${L.length ? (q ? L.length + " régate(s) trouvée(s)…" : "Choisir une régate…") : "Aucune régate trouvée"}</option>` +
+    grp("En cours aujourd'hui", now, 50) + grp("À venir", up, 60) + grp(q ? "Passées" : "Passées (les plus récentes, utilise la recherche pour les autres)", past, q ? 300 : 150);
+}
+async function ctOpen() { if (CT.list) return; try { await ctLoad(); ctRender(); } catch (e) {} }
+$("#ctList").addEventListener("focus", ctOpen);
+$("#ctList").addEventListener("pointerdown", ctOpen);
+$("#ctFind").addEventListener("focus", ctOpen);
+$("#ctFind").addEventListener("input", () => { if (CT.list) ctRender(); else ctOpen(); });
+$("#ctList").addEventListener("change", e => { const id = e.target.value; if (!id) return; $("#url").value = "https://crewtimer.com/regatta/" + id; start(); });
+/* Paramètres repliables (préférence gardée sur l'appareil) */
+function setSettings(open){ document.body.classList.toggle("compact",!open); const b=$("#setTog"); b.setAttribute("aria-expanded",String(open)); b.textContent=open?"⚙ Masquer les paramètres":"⚙ Afficher les paramètres"; try{ localStorage.setItem("ct-settings",open?"1":"0"); }catch(e){} }
+$("#setTog").onclick=()=>setSettings(document.body.classList.contains("compact"));
+try{ setSettings(localStorage.getItem("ct-settings")==="1"); }catch(e){ setSettings(false); }
+/* Horloge en direct + heure de la dernière mise à jour des résultats */
+let LAST_UPD=0;
+function clockTick(){
+  const now=new Date(); $("#clkT").textContent=now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const u=$("#clkU"); if(!LAST_UPD){ u.textContent=""; u.className="clk-u"; return; }
+  const ago=Math.max(0,Math.round((now-LAST_UPD)/1000));
+  const agoTxt=ago<60?`il y a ${ago} s`:ago<3600?`il y a ${Math.floor(ago/60)} min`:`à ${new Date(LAST_UPD).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}`;
+  u.textContent=(timer?"Direct · ":"")+"résultats mis à jour "+agoTxt; u.className="clk-u"+(timer?" live":"");
+}
+clockTick(); setInterval(clockTick,1000);
+$("#go").onclick=start;
+$("#url").addEventListener("keydown",e=>{ if(e.key==="Enter") start(); });
+$("#stop").onclick=()=>{ stopLive(); setStatus("Direct arrêté."); };
+$("#every").onchange=()=>{ if(regId&&!isSample) start(); };
+["#fSex","#fAge","#fBoat","#splitWp","#dist","#u17","#mix","#fDay","#fCat","#fText"].forEach(s=>$(s).addEventListener("input",render));
+$("#vRace").onclick=()=>{ view="race"; $("#vRace").setAttribute("aria-pressed","true"); $("#vFlat").setAttribute("aria-pressed","false"); render(); };
+$("#vFlat").onclick=()=>{ view="flat"; $("#vFlat").setAttribute("aria-pressed","true"); $("#vRace").setAttribute("aria-pressed","false"); render(); };
+
+/* Saisie manuelle : JSON CrewTimer ou texte libre */
+const TIME_RE=/(?<![\d:])(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[.,]\d{1,3})?(?![\d:])/g;
+const CODE_RE=/(?<![A-Za-z0-9])((?:U23|U19B|U19|U17|J1[6-8]|SA|S)?\s?[HFM]\s?(?:1x|2x|4x\+?|2-|4-|8\+))(?![A-Za-z0-9+-])/i;
+function parseText(txt){
+  const evs=[]; let cur=null;
+  txt.split(/\r?\n/).forEach(line=>{
+    if(!line.trim()) return;
+    const code=line.match(CODE_RE), times=line.match(TIME_RE);
+    if(!times){ if(code){ cur={EventNum:String(evs.length+1),Event:line.trim(),Day:"",entries:[]}; cur._ab=code[1].replace(/\s/g,""); evs.push(cur);} return; }
+    if(!cur){ cur={EventNum:"1",Event:"Résultats collés",Day:"",entries:[]}; evs.push(cur); }
+    let name=line; times.forEach(t=>name=name.replace(t,""));
+    let place=""; name=name.replace(/^\s*(\d{1,3})[.)]?\s+/,(m,p)=>{place=p;return "";});
+    const ab = code? code[1].replace(/\s/g,"") : cur._ab||"";
+    if(code) name=name.replace(code[0],"");
+    cur.entries.push({Crew:name.replace(/\s{2,}/g," ").replace(/[\s\-–|]+$/,"").trim(),Stroke:"",EventAbbrev:ab,AdjTime:times[times.length-1],Place:place});
+  });
+  return {regattaInfo:{Title:"Résultats collés"},results:evs};
+}
+$("#usePaste").onclick=()=>{
+  const t=$("#paste").value.trim(); if(!t) return;
+  stopLive(); overrides={};
+  try{
+    let d; try{ d=JSON.parse(t.slice(t.indexOf("{"))); }catch(_){ d=null; }
+    if(d && (d.results||d.entries)) RAW = d.results ? d : {regattaInfo:{Title:"Résultats collés"},results:[d]};
+    else RAW = parseText(t);
+    isSample=false; firstLoad=true; showMsg(""); setStatus("Calculé depuis le texte collé."); render(); wxFetch(true);
+  }catch(e){ showMsg("Le texte collé n'a pas pu être lu."); }
+};
+
+/* Conditions du bassin : météo Open-Meteo (modèle au quart d'heure, pas une mesure sur place) au départ de chaque course */
+let WX = {name:"", lat:null, lon:null, series:null, range:"", src:""};
+let wxResults = [];
+try{ const w=JSON.parse(localStorage.getItem("ct-wx")||"null"); if(w){ WX.name=w.name||""; WX.lat=w.lat??null; WX.lon=w.lon??null; if(w.orient!=null) $("#wxOrient").value=w.orient; } }catch(e){}
+function saveWx(){ try{ localStorage.setItem("ct-wx", JSON.stringify({name:WX.name,lat:WX.lat,lon:WX.lon,orient:$("#wxOrient").value})); }catch(e){} }
+function wxMsg(t){ $("#wxMsg").textContent=t; }
+function wxUi(){
+  const sel=$("#wxPick");
+  if(wxResults.length) sel.innerHTML=wxResults.map((x,i)=>`<option value="${i}"${x.latitude===WX.lat&&x.longitude===WX.lon?" selected":""}>${esc(placeName(x))}</option>`).join("");
+  else sel.innerHTML = WX.lat!=null ? `<option value="cur">${esc(WX.name||(WX.lat+", "+WX.lon))}</option>` : `<option value="">Aucun bassin choisi</option>`;
+}
+const placeName=x=>[x.name,x.admin2||x.admin1,x.country].filter(Boolean).join(", ");
+const WD_FR={dimanche:0,lundi:1,mardi:2,mercredi:3,jeudi:4,vendredi:5,samedi:6,sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
+function baseDate(){ return $("#wxDate").value || (RAW.regattaInfo&&RAW.regattaInfo.Date) || ""; }
+function addDays(iso,n){ const d=new Date(iso+"T12:00:00Z"); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+function raceDate(ev){
+  const b=baseDate(); if(!/^\d{4}-\d{2}-\d{2}$/.test(b)) return null;
+  const lab=String(ev.day||"").toLowerCase();
+  const k=Object.keys(WD_FR).find(w=>lab.includes(w));
+  if(k){ const bw=new Date(b+"T12:00:00Z").getUTCDay(); return addDays(b,(WD_FR[k]-bw+7)%7); }
+  const n=lab.match(/(?:jour|day)\s*(\d)/); if(n) return addDays(b,+n[1]-1);
+  return b;
+}
+function raceClock(ev){
+  let m=String(ev.startAct||"").match(/^(\d{1,2}):(\d{2})/);
+  if(m) return +m[1]*60 + +m[2];
+  m=String(ev.start||"").match(/(\d{1,2})[:h](\d{2})\s*(AM|PM)?/i);
+  if(m){ let h=+m[1]; if(m[3]){ const pm=m[3].toUpperCase()==="PM"; if(pm&&h<12) h+=12; if(!pm&&h===12) h=0; } return h*60 + +m[2]; }
+  return null;
+}
+function wxAt(ev){
+  const s=WX.series; if(!s||!ev) return null;
+  const d=raceDate(ev), c=raceClock(ev); if(!d||c==null) return null;
+  const target=c+3; let best=-1, bd=1e9;
+  for(let i=0;i<s.time.length;i++){
+    if(!s.time[i].startsWith(d)||s.ws[i]==null) continue;
+    const diff=Math.abs(+s.time[i].slice(11,13)*60 + +s.time[i].slice(14,16) - target);
+    if(diff<bd){ bd=diff; best=i; }
+  }
+  if(best<0||bd>45) return null;
+  const o={ws:s.ws[best],wd:s.wd[best],wg:s.wg[best],t:s.t[best],p:s.p[best],time:s.time[best].slice(11,16)};
+  const h=$("#wxOrient").value;
+  if(h!==""&&isFinite(+h)){ const a=(o.wd-(+h))*Math.PI/180; o.head=o.ws*Math.cos(a); o.cross=Math.abs(o.ws*Math.sin(a)); }
+  return o;
+}
+const COMPASS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+const compass=d=>COMPASS[Math.round((((d%360)+360)%360)/22.5)%16];
+/* Vitesses du vent au centième de km/h */
+const kmh=x=>x==null||!isFinite(x)?"–":(+x).toFixed(2).replace(".",",");
+function windKind(o){
+  if(o.head==null) return "";
+  const hd=Math.abs(o.head), cr=o.cross;
+  if(hd<0.5&&cr<0.5) return "vent quasi nul ("+kmh(o.ws)+" km/h)";
+  if(hd>=cr) return (o.head>0?"vent contre ":"vent pour ")+kmh(hd)+" km/h"+(cr>=0.5?", travers "+kmh(cr):"");
+  return "travers "+kmh(cr)+" km/h"+(hd>=0.5?(o.head>0?", vent contre ":", vent pour ")+kmh(hd):"");
+}
+function wxText(o){ if(!o) return ""; return `${o.time} · vent ${kmh(o.ws)} km/h ${compass(o.wd)} (${Math.round(o.wd)}°)${o.wg!=null?` (rafales ${kmh(o.wg)})`:""}${o.head!=null?" · "+windKind(o):""} · ${Math.round(o.t)} °C${o.p>0?` · pluie ${o.p} mm`:""}`; }
+function wxShort(o){ if(!o) return ""; return o.head!=null ? windKind(o) : `${kmh(o.ws)} km/h ${compass(o.wd)}`; }
+function wxArrow(o){
+  const h=$("#wxOrient").value;
+  if(h===""||!isFinite(+h)) return `<svg class="wxa" viewBox="0 0 16 16" aria-hidden="true" style="transform:rotate(${Math.round((o.wd+180)%360)}deg)"><path d="M8 1 12.5 9H9.2v6H6.8V9H3.5Z" fill="currentColor"/></svg>`;
+  /* Bateau toujours vers le haut ; la flèche montre où souffle le vent par rapport à lui */
+  const rot=Math.round(((o.wd-(+h))%360+360)%360);
+  return `<svg class="wxb" viewBox="0 0 20 20" role="img" aria-label="Vent par rapport au bateau"><title>Vent par rapport au bateau (le bateau avance vers le haut)</title><path d="M10 1.5C12.2 4.5 12.4 9.5 11.8 18.5H8.2C7.6 9.5 7.8 4.5 10 1.5Z" fill="var(--muted)" opacity=".75"/><g transform="rotate(${rot} 10 10)"><path d="M10 3.2V15.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M6.6 12.2 10 16.6 13.4 12.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
+}
+function wxCls(o){ return o.head==null?"":o.head>3?" face":o.head<-3?" dos":""; }
+/* Heure de départ utilisée pour la météo : réelle (CrewTimer) ou prévue (programme) */
+function startSrc(e){
+  const m=String(e.startAct||"").match(/^(\d{1,2}):(\d{2})/); if(m) return {real:true,txt:`${+m[1]}:${m[2]}`};
+  const c=raceClock(e); return c==null?null:{real:false,txt:`${Math.floor(c/60)}:${String(c%60).padStart(2,"0")}`};
+}
+function wxChip(e){ const o=wxAt(e); if(!o) return ""; const ss=startSrc(e);
+  const src=ss?`<span class="wxsrc${ss.real?"":" plan"}" title="${ss.real?"Heure réelle de départ enregistrée dans CrewTimer":"Pas d'heure réelle dans CrewTimer : horaire prévu au programme"}, utilisée pour la météo">${ss.real?"réel":"prévu"} ${esc(ss.txt)}</span>`:"";
+  return `${src}<span class="wx${wxCls(o)}" title="Conditions modélisées (Open-Meteo) vers ${esc(o.time)}, pas une mesure sur le bassin">${wxArrow(o)}${esc(wxText(o))}</span>${hyChip(e)}`; }
+function wxShortHtml(ev){ const o=wxAt(ev); return o?`<span class="wx${wxCls(o)}">${wxArrow(o)}${esc(wxShort(o))}</span>`:`<span class="na">—</span>`; }
+function wxCols(e){ const o=wxAt(e); return o?[o.time,kmh(o.ws),compass(o.wd)+" ("+Math.round(o.wd)+"°)",o.wg!=null?kmh(o.wg):"",o.head!=null?windKind(o):"",Math.round(o.t)]:["","","","","",""]; }
+async function wxSearch(){
+  const q=$("#wxPlace").value.trim(); if(!q) { wxMsg("Indiquez une ville ou des coordonnées."); return; }
+  const c=q.match(/^\s*(-?\d+(?:[.,]\d+)?)\s*[,; ]\s*(-?\d+(?:[.,]\d+)?)\s*$/);
+  if(c){ wxResults=[]; WX.lat=+c[1].replace(",","."); WX.lon=+c[2].replace(",","."); WX.name=WX.lat+", "+WX.lon; WX.series=null; saveWx(); wxUi(); return wxFetch(true); }
+  wxMsg("Recherche du bassin…");
+  try{
+    const d=await getJson(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=fr`);
+    wxResults=(d&&d.results)||[];
+    if(!wxResults.length){ wxMsg("Aucun lieu trouvé. Essayez la ville la plus proche ou des coordonnées."); return; }
+    pickPlace(0);
+  }catch(e){ wxMsg("Recherche impossible : "+wxErr(e)); }
+}
+function pickPlace(i){ const x=wxResults[i]; if(!x) return; WX.lat=x.latitude; WX.lon=x.longitude; WX.name=placeName(x); WX.series=null; saveWx(); wxUi(); wxFetch(true); }
+function wxErr(e){ return e&&e.code==="not_granted" ? "ouvrez l'outil dans l'app de bureau Claude." : e&&e.code==="tool_error" ? "autorisez le site open-meteo.com dans l'app, puis réessayez." : (e&&e.message?String(e.message).slice(0,120):"service indisponible."); }
+let wxBusy=false, wxAtTime=0;
+async function wxFetch(force){
+  if(WX.lat==null||isSample||wxBusy) return;
+  const dates=[...new Set((LAST||[]).map(raceDate).filter(Boolean))].sort();
+  if(!dates.length){ wxMsg("Date de la régate inconnue : renseignez la date du 1er jour."); return; }
+  const range=WX.lat+","+WX.lon+","+dates.join();
+  if(!force && WX.series && WX.range===range && Date.now()-wxAtTime<10*60*1000){ hydroFetch(false); return; }
+  wxBusy=true; wxMsg("Récupération des conditions…");
+  const v="wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,precipitation";
+  const q=`latitude=${WX.lat}&longitude=${WX.lon}&start_date=${dates[0]}&end_date=${dates[dates.length-1]}&timezone=auto`;
+  try{
+    let src=await getJson(`https://api.open-meteo.com/v1/forecast?${q}&minutely_15=${v}&hourly=${v}`);
+    if(!src||src.error) src=await getJson(`https://archive-api.open-meteo.com/v1/archive?${q}&hourly=${v}`);
+    if(!src||src.error) throw {message:(src&&src.reason)||"données indisponibles pour ces dates"};
+    const m=src.minutely_15, fine=m&&m.wind_speed_10m&&m.wind_speed_10m.some(x=>x!=null);
+    const b=fine?m:src.hourly;
+    WX.series={time:b.time,ws:b.wind_speed_10m,wd:b.wind_direction_10m,wg:b.wind_gusts_10m,t:b.temperature_2m,p:b.precipitation};
+    WX.range=range; WX.src=fine?"15 min":"horaire"; wxAtTime=Date.now();
+    const timed=(LAST||[]).filter(e=>raceClock(e)!=null).length;
+    wxMsg(timed ? `Conditions chargées pour ${WX.name} (pas ${WX.src}, ${dates.length>1?"du "+dates[0]+" au "+dates[dates.length-1]:"le "+dates[0]}), ${timed} course${timed>1?"s":""} avec heure de départ.`
+      : `Conditions chargées pour ${WX.name}, mais aucune heure de départ dans les résultats affichés : cliquez sur « Charger » pour relire la régate sur CrewTimer.`);
+    render();
+  }catch(e){ wxMsg("Conditions indisponibles : "+wxErr(e)); }
+  finally{ wxBusy=false; }
+  hydroFetch(force);
+}
+/* Données fluviales (Hub'Eau, réseau Vigicrues) : débit et hauteur d'eau mesurés à la station liée au bassin */
+const HYDRO_DEFAULT={"bmw93m7v6":"O494101001","bmwhx1zl0":"V144002002"}; /* Bressols : Le Tarn à Montauban (station la plus proche, en aval) */
+let HY={code:null,q:[],h:[]}, hyBusy=false;
+function hydroCode(){ const b=BASINS.find(x=>x.id===basinId); if(!b) return "";
+  if(!b.hydro){ const mid=b.start&&b.finish?[(b.start[0]+b.finish[0])/2,(b.start[1]+b.finish[1])/2]:null, nearBelley=mid&&Math.hypot(mid[0]-45.7105,(mid[1]-5.6994)*0.7)<0.09; /* ~10 km autour de Brens */
+  const def=HYDRO_DEFAULT[b.id]||(/bressols|montauban/i.test(b.name)?"O494101001":(/belley|virignin|brens/i.test(b.name)||nearBelley)?"V144002002":""); if(def){ b.hydro=def; saveBasins(); } } /* la station reste enregistrée avec le bassin */
+  return String(b.hydro||"").trim(); }
+const PARIS=new Intl.DateTimeFormat("fr-CA",{timeZone:"Europe/Paris",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+function parisOf(t){ const p=Object.fromEntries(PARIS.formatToParts(t).map(x=>[x.type,x.value])); return {d:`${p.year}-${p.month}-${p.day}`,m:+p.hour*60+ +p.minute}; }
+async function hydroFetch(force){
+  const code=hydroCode(); if(!code||isSample){ if(!code) HY={code:null,q:[],h:[]}; return; }
+  if(hyBusy) return;
+  const dates=[...new Set((LAST||[]).map(raceDate).filter(Boolean))].sort(); if(!dates.length) return;
+  const range=code+","+dates.join(); if(!force&&HY.range===range&&Date.now()-(HY.at||0)<10*60*1000) return;
+  hyBusy=true;
+  try{
+    const end=new Date(dates[dates.length-1]+"T00:00:00Z"); end.setUTCDate(end.getUTCDate()+1);
+    const base=`https://hubeau.eaufrance.fr/api/v2/hydrometrie/observations_tr?code_entite=${encodeURIComponent(code)}&date_debut_obs=${dates[0]}T00:00:00Z&date_fin_obs=${end.toISOString().slice(0,10)}T00:00:00Z&size=5000&sort=asc&fields=date_obs,resultat_obs`;
+    const q=await getJson(base+"&grandeur_hydro=Q"), h=await getJson(base+"&grandeur_hydro=H");
+    let name=HY.code===code&&HY.name?HY.name:"";
+    if(!name){ try{ const st=await getJson(`https://hubeau.eaufrance.fr/api/v2/hydrometrie/referentiel/stations?code_station=${encodeURIComponent(code)}&fields=libelle_station`); name=(st&&st.data&&st.data[0]&&st.data[0].libelle_station)||""; }catch(_){ } }
+    const pick=(r,k)=>((r&&r.data)||[]).filter(o=>o.resultat_obs!=null).map(o=>{ const p=parisOf(new Date(o.date_obs)); return {d:p.d,m:p.m,v:o.resultat_obs/k}; });
+    HY={code,range,at:Date.now(),name:name||code,q:pick(q,1000),h:pick(h,1000)};
+  }catch(e){ HY={code,range,at:Date.now(),name:HY.name||code,q:[],h:[],err:e&&e.code==="tool_error"?"autorisez le site hubeau.eaufrance.fr dans l'app, puis réessayez.":"données indisponibles"}; }
+  finally{ hyBusy=false; render(); }
+}
+/* Débit et hauteur au départ d'une course (mesure la plus proche, à 90 min près) */
+function hyAt(e){
+  const d=raceDate(e), c=raceClock(e); if(!d||c==null) return null;
+  const near=a=>{ let b=null; a.forEach(o=>{ if(o.d!==d) return; const dt=Math.abs(o.m-c); if(dt<=90&&(!b||dt<b.dt)) b={...o,dt}; }); return b; };
+  const q=near(HY.q||[]), h=near(HY.h||[]); return q||h?{q,h}:null;
+}
+const fmtQ=v=>v>=100?Math.round(v):v>=10?v.toFixed(1).replace(".",","):v.toFixed(2).replace(".",",");
+function hyChip(e){ const o=hyAt(e); if(!o) return "";
+  const t=[o.q?`débit ${fmtQ(o.q.v)} m³/s`:"", o.h?`hauteur ${o.h.v.toFixed(2).replace(".",",")} m`:""].filter(Boolean).join(" · ");
+  return ` <span class="wx hy" title="Mesure de la station ${esc(HY.name||"")} (Hub'Eau / Vigicrues) la plus proche du départ">≈ ${esc(t)}</span>`; }
+$("#wxGo").onclick=wxSearch;
+$("#wxPlace").addEventListener("keydown",e=>{ if(e.key==="Enter") wxSearch(); });
+$("#wxPick").onchange=e=>{ const v=e.target.value; if(v!==""&&v!=="cur") pickPlace(+v); };
+$("#wxLoad").onclick=()=>{ if(WX.lat==null){ wxMsg("Choisissez d'abord le bassin."); return; } wxFetch(true); };
+$("#wxOrient").addEventListener("input",()=>{ saveWx(); render(); });
+$("#wxDate").addEventListener("change",()=>{ wxFetch(true); render(); });
+wxUi();
+
+/* Registre des bassins : départ + arrivée → axe exact et point météo au milieu du bassin */
+/* Bassins enregistrés par défaut (repris de la version claude.ai) ; ceux créés sur l'appareil s'y ajoutent */
+const DEFAULT_BASINS=[{"id":"bmvqp4o8q","name":"Vichy","start":[46.122139084541935,3.414245533963184],"finish":[46.14083103940673,3.4114774942469555],"axis":354.14,"length":2089},{"id":"bmvqpxuxd","name":"Caen","start":[49.22841863486016,-0.29195446085295207],"finish":[49.188767239420606,-0.3257294232702663],"axis":209.11,"length":5046},{"id":"bmvqq1syl","name":"Nantes (Léo - Passerelle)","start":[47.2466966013949,-1.5449955345659396],"finish":[47.238160007874356,-1.549544560736952],"axis":199.89,"length":1009},{"id":"bmvxpwcrf","name":"Nantes (2k Jone - Passerelle)","start":[47.2545153039332,-1.5391893665202505],"finish":[47.238160007874356,-1.549544560736952],"axis":203.26,"length":1979},{"id":"bmwhx1zl0","name":"Belley","start":[45.76547292054623,5.755150652920355],"finish":[45.737931542017094,5.705419769087034],"axis":231.58,"length":4926,"hydro":"V144002002"}];
+let BASINS=[]; try{ BASINS=JSON.parse(localStorage.getItem("ct-basins")||"[]")||[]; }catch(e){ BASINS=[]; }
+let DELETED_BASINS=[]; try{ DELETED_BASINS=JSON.parse(localStorage.getItem("ct-basins-del")||"[]")||[]; }catch(e){}
+DEFAULT_BASINS.forEach(b=>{ if(!BASINS.some(x=>x.id===b.id) && !DELETED_BASINS.includes(b.id)) BASINS.push(b); });
+let basinId=null, editingId=null; try{ basinId=localStorage.getItem("ct-basin-sel")||null; }catch(e){}
+function saveBasins(){ try{ localStorage.setItem("ct-basins",JSON.stringify(BASINS)); localStorage.setItem("ct-basin-sel",basinId||""); }catch(e){} }
+function mergeBasins(list){ (list||[]).forEach(b=>{ if(!b||!b.id) return; const i=BASINS.findIndex(x=>x.id===b.id); if(i<0) BASINS.push(b); else BASINS[i]=b; }); saveBasins(); }
+function parseLL(t){
+  const m=String(t||"").trim().match(/^(-?\d{1,3}(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:[.,]\d+)?)$/);
+  if(!m) return null; const a=+m[1].replace(",","."), b=+m[2].replace(",",".");
+  return Math.abs(a)<=90&&Math.abs(b)<=180 ? [a,b] : null;
+}
+function bearing(p,q){ const r=Math.PI/180, f1=p[0]*r, f2=q[0]*r, dl=(q[1]-p[1])*r;
+  return (Math.atan2(Math.sin(dl)*Math.cos(f2), Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dl))/r+360)%360; }
+function distM(p,q){ const r=Math.PI/180, a=Math.sin((q[0]-p[0])*r/2)**2+Math.cos(p[0]*r)*Math.cos(q[0]*r)*Math.sin((q[1]-p[1])*r/2)**2; return 2*6371000*Math.asin(Math.sqrt(a)); }
+const deg1=x=>x.toFixed(1).replace(".",",");
+function basinAxis(){
+  const st=parseLL($("#bStart").value), fi=parseLL($("#bFinish").value), el=$("#bAxis");
+  el.classList.remove("warn");
+  if(!st||!fi){ el.textContent=($("#bStart").value||$("#bFinish").value)?"Coordonnées non reconnues : format attendu 46.1312, 3.4189.":"Saisissez les coordonnées du départ et de l'arrivée."; return null; }
+  const ax=bearing(st,fi), d=distM(st,fi);
+  el.textContent=`Axe ${deg1(ax)}° (${compass(ax)}) · ${Math.round(d).toLocaleString("fr-FR")} m entre départ et arrivée`+(d<400?" · points très proches, vérifiez-les":d>2600?" · distance supérieure à 2 600 m, vérifiez-les":"");
+  if(d<400||d>2600) el.classList.add("warn");
+  return {st,fi,ax,d};
+}
+function basinUi(){
+  const sel=$("#basinSel");
+  sel.innerHTML=`<option value="">Aucun : saisie libre ci-dessous</option>`+BASINS.slice().sort((a,b)=>a.name.localeCompare(b.name,"fr")).map(b=>`<option value="${esc(b.id)}"${b.id===basinId?" selected":""}>${esc(b.name)} · axe ${deg1(b.axis)}°</option>`).join("");
+  $("#basinEdit").disabled=!BASINS.some(b=>b.id===basinId);
+}
+function applyBasin(b, fetch){
+  WX.lat=+((b.start[0]+b.finish[0])/2).toFixed(5); WX.lon=+((b.start[1]+b.finish[1])/2).toFixed(5);
+  WX.name=b.name; WX.series=null; wxResults=[];
+  $("#wxOrient").value=b.axis.toFixed(1); $("#wxPlace").value="";
+  saveWx(); wxUi(); render();
+  if(fetch) wxFetch(true);
+}
+function openBasinForm(b){
+  editingId=b?b.id:null;
+  $("#bName").value=b?b.name:""; $("#bStart").value=b?b.start.join(", "):""; $("#bFinish").value=b?b.finish.join(", "):""; $("#bHydro").value=b?(b.hydro||HYDRO_DEFAULT[b.id]||""):"";
+  $("#bDel").hidden=!b; $("#bDel").textContent="Supprimer"; delete $("#bDel").dataset.confirm;
+  $("#basinForm").hidden=false; basinAxis(); $("#bName").focus();
+}
+$("#basinNew").onclick=()=>openBasinForm(null);
+$("#basinEdit").onclick=()=>openBasinForm(BASINS.find(b=>b.id===basinId));
+$("#bCancel").onclick=()=>{ $("#basinForm").hidden=true; editingId=null; };
+["#bStart","#bFinish"].forEach(id=>$(id).addEventListener("input",basinAxis));
+$("#bSave").onclick=()=>{
+  const name=$("#bName").value.trim(), a=basinAxis();
+  if(!name){ $("#bAxis").textContent="Donnez un nom au bassin."; $("#bAxis").classList.add("warn"); return; }
+  if(!a) return;
+  const b={id:editingId||("b"+Date.now().toString(36)), name, start:a.st, finish:a.fi, axis:+a.ax.toFixed(2), length:Math.round(a.d)}; const hy=$("#bHydro").value.trim().toUpperCase(); if(hy) b.hydro=hy;
+  const i=BASINS.findIndex(x=>x.id===b.id); if(i<0) BASINS.push(b); else BASINS[i]=b;
+  basinId=b.id; saveBasins(); basinUi(); $("#basinForm").hidden=true; editingId=null;
+  applyBasin(b,true);
+};
+$("#bDel").onclick=e=>{
+  const btn=e.currentTarget;
+  if(!btn.dataset.confirm){ btn.dataset.confirm="1"; btn.textContent="Confirmer la suppression"; return; }
+  if(DEFAULT_BASINS.some(b=>b.id===editingId)){ DELETED_BASINS.push(editingId); try{ localStorage.setItem("ct-basins-del",JSON.stringify(DELETED_BASINS)); }catch(e){} }
+  BASINS=BASINS.filter(b=>b.id!==editingId); if(basinId===editingId) basinId=null;
+  saveBasins(); basinUi(); $("#basinForm").hidden=true; editingId=null; render();
+};
+$("#basinSel").onchange=e=>{
+  basinId=e.target.value||null; saveBasins(); basinUi();
+  const b=BASINS.find(x=>x.id===basinId); if(b) applyBasin(b,true);
+};
+basinUi();
+
+/* Frise du vent par jour de course : intensité, rafales, direction (par rapport au bateau si l'axe est connu) */
+function tlArrow(cx,cy,rot,col,tip){ /* flèche orientée dans le sens où souffle le vent, 0° = vent du nord (flèche vers le bas) */
+  return `<g transform="translate(${cx.toFixed(1)} ${cy}) rotate(${Math.round(rot)})"><title>${esc(tip)}</title><line x1="0" y1="-6" x2="0" y2="5" stroke="${col}" stroke-width="1.6" stroke-linecap="round"/><path d="M-3.2 2.2 0 6.4 3.2 2.2" fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+}
+/* Catégories de skiff suivies sur la frise : une ligne par catégorie, un point par course */
+const TL_CATS=[{k:"U17F",ages:["U17"],g:"F",col:"#d9822b"},{k:"U17H",ages:["U17"],g:"H",col:"#6b8e23"},{k:"U19F",ages:["U19"],g:"F",col:"#c2508f"},{k:"U19H",ages:["U19"],g:"H",col:"#3d7fc4"},{k:"SF",ages:["SA","U23"],g:"F",col:"#9b59b6"},{k:"SH",ages:["SA","U23"],g:"H",col:"#2a9d8f"}];
+/* catégorie lue dans la colonne Event (U19 / U23 / Senior, H / F, skiff) */
+function tlCatOf(e){
+  const d=merge(decodeText(e.name), decodeText(e.abbrev));
+  if(!d.boat && /\bSKIFF\b/i.test(e.name||"")) d.boat="1x";
+  if(d.boat!=="1x") return null;
+  const c=TL_CATS.find(c=>c.g===d.g&&c.ages.includes(d.age)); if(!c) return null;
+  return {...c, code:(d.age==="SA"?"S":d.age)+d.g+"1x"};
+}
+function dayChart(d,races,W,H0){
+  const s=WX.series, mins=i=>+s.time[i].slice(11,13)*60 + +s.time[i].slice(14,16);
+  const rc=races.map(r=>r.c).filter(c=>c!=null);
+  let t0=rc.length?Math.min(...rc)-45:7*60, t1=rc.length?Math.max(...rc)+45:19*60;
+  t0=Math.max(0,Math.floor(t0/60)*60); t1=Math.min(24*60,Math.ceil(t1/60)*60); if(t1-t0<180) t1=Math.min(24*60,t0+180);
+  const pts=[]; s.time.forEach((t,i)=>{ if(t.startsWith(d)&&s.ws[i]!=null&&mins(i)>=t0&&mins(i)<=t1) pts.push(i); });
+  if(pts.length<2) return "";
+  const marks=[];
+  races.filter(r=>r.c!=null&&r.c>=t0&&r.c<=t1&&tlCatOf(r.e)).sort((a,b)=>a.c-b.c).forEach(r=>marks.push(r));
+  const L=60,R=12,T=38,B=22,H1=166, pw=W-L-R, ph=H1-T-B;
+  const vmax=Math.max(20,...pts.map(i=>Math.max(s.ws[i]||0,s.wg[i]||0)));
+  const step=vmax>45?20:10, top=Math.ceil(vmax/step)*step;
+  const x=m=>L+(m-t0)/(t1-t0)*pw, y=v=>T+ph-(v/top)*ph;
+  let g="";
+  for(let v=0;v<=top;v+=step) g+=`<line x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${(y(v)+3.5).toFixed(1)}" text-anchor="end">${v}</text>`;
+  const hstep=(t1-t0)>10*60?120:60;
+  for(let m=Math.ceil(t0/60)*60;m<=t1;m+=hstep) g+=`<line x1="${x(m).toFixed(1)}" x2="${x(m).toFixed(1)}" y1="${T}" y2="${T+ph}" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3"/><text x="${x(m).toFixed(1)}" y="${H1-6}" text-anchor="middle">${m/60} h</text>`;
+  /* épreuves de skiff suivies (U19 et S/U23, H et F, lues dans la colonne Event) : nom en haut de la frise + flèche vers le trait de départ */
+  const ends=[-1e9,-1e9]; let tlMk="";
+  marks.forEach(r=>{ const c=tlCatOf(r.e), xx=x(r.c+3), lab=c.code, w=lab.length*5.4+6;
+    let row=ends.findIndex(v=>xx-w/2>v+2); if(row<0) row=ends[0]<=ends[1]?0:1; ends[row]=xx+w/2;
+    const hm=`${String(Math.floor(r.c/60)).padStart(2,"0")}:${String(r.c%60).padStart(2,"0")}`, ty=T+8+row*11, tip=y(0)-8, x0=Math.min(Math.max(xx,L+w/2),W-R-w/2);
+    tlMk+=`<g><title>${esc(lab)} · ${esc(epLabel(r.e))} · course ${esc(r.e.num)} · ${hm}</title><line x1="${xx.toFixed(1)}" x2="${xx.toFixed(1)}" y1="${ty+3}" y2="${(tip-1).toFixed(1)}" stroke="${c.col}" stroke-width="1.2" stroke-dasharray="3 2"/><path d="M${(xx-3).toFixed(1)} ${(tip-4).toFixed(1)} ${xx.toFixed(1)} ${tip.toFixed(1)} ${(xx+3).toFixed(1)} ${(tip-4).toFixed(1)}" fill="none" stroke="${c.col}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><text x="${x0.toFixed(1)}" y="${ty}" text-anchor="middle" style="fill:${c.col};font-weight:700;font-size:9.5px;paint-order:stroke;stroke:var(--surface);stroke-width:3px">${esc(lab)}</text></g>`; });
+  /* panneau débit de la rivière (Hub'Eau) sous la frise du vent */
+  /* débit si publié pour la plage des courses, sinon hauteur d'eau (le débit Vigicrues arrive souvent avec un jour de retard) */
+  const inWin=a=>(a||[]).filter(o=>o.d===d&&o.m>=t0&&o.m<=t1), qWin=inWin(HY.q), useH=qWin.length<2, hq=useH?inWin(HY.h):qWin, HP=hq.length>1?96:0, Hh=H1+HP;
+  const hyU=useH?"m":"m³/s", hyF=useH?(v=>v.toFixed(2).replace(".",",")):fmtQ;
+  if(HP){
+    const y0=H1+20, hh=HP-36, vs=hq.map(o=>o.v); let lo=Math.min(...vs), hi=Math.max(...vs); const pad=useH?Math.max((hi-lo)*.15,.05):Math.max((hi-lo)*.15,hi*.02,.5); lo=Math.max(0,lo-pad); hi=hi+pad;
+    const yq=v=>y0+hh-(v-lo)/(hi-lo)*hh, Q=hq.map(o=>[x(o.m),yq(o.v)]);
+    g+=`<text x="${L}" y="${H1+12}" style="font-weight:700;fill:var(--fg)">${useH?"Hauteur d'eau (m)":"Débit (m³/s)"} · ${esc(HY.name||"")}</text>`;
+    [lo,hi].forEach(v=>{ g+=`<line x1="${L}" x2="${W-R}" y1="${yq(v).toFixed(1)}" y2="${yq(v).toFixed(1)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${(yq(v)+3.5).toFixed(1)}" text-anchor="end">${hyF(v)}</text>`; });
+    g+=`<path d="M${Q[0][0].toFixed(1)} ${(y0+hh).toFixed(1)}${Q.map(p=>`L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join("")}L${Q[Q.length-1][0].toFixed(1)} ${(y0+hh).toFixed(1)}Z" fill="#2f7fbf" fill-opacity=".16"/><polyline points="${Q.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}" fill="none" stroke="#2f7fbf" stroke-width="2" stroke-linejoin="round"/>`;
+    races.filter(r=>r.c!=null&&r.c>=t0&&r.c<=t1).forEach(r=>{ const xx=x(r.c+3).toFixed(1), o=hyAt(r.e); g+=`<g><title>Course ${esc(r.e.num)}${o&&o.q?` · débit ${fmtQ(o.q.v)} m³/s`:""}${o&&o.h?` · hauteur ${o.h.v.toFixed(2).replace(".",",")} m`:""}</title><line x1="${xx}" x2="${xx}" y1="${(y0+hh-7).toFixed(1)}" y2="${(y0+hh).toFixed(1)}" stroke="var(--fg)" stroke-width="1.5"/><rect x="${(+xx-3).toFixed(1)}" y="${y0}" width="6" height="${hh}" fill="transparent"/></g>`; });
+    const a=hq[0], z=hq[hq.length-1], dv=z.v-a.v;
+    g+=`<text x="${W-R}" y="${H1+12}" text-anchor="end">${hyF(a.v)} → ${hyF(z.v)} ${hyU} (${dv>=0?"+":"−"}${hyF(Math.abs(dv))})</text>`;
+  }
+  const P=pts.map(i=>[x(mins(i)),y(s.ws[i])]);
+  g+=`<path d="M${P[0][0].toFixed(1)} ${y(0).toFixed(1)}${P.map(p=>`L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join("")}L${P[P.length-1][0].toFixed(1)} ${y(0).toFixed(1)}Z" fill="var(--accent)" fill-opacity=".14"/>`;
+  const G=pts.filter(i=>s.wg[i]!=null).map(i=>`${x(mins(i)).toFixed(1)},${y(s.wg[i]).toFixed(1)}`).join(" ");
+  if(G) g+=`<polyline points="${G}" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+  g+=`<polyline points="${P.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+  /* départs des courses */
+  races.filter(r=>r.c!=null&&r.c>=t0&&r.c<=t1).forEach(r=>{ const xx=x(r.c+3).toFixed(1); g+=`<g><title>Course ${esc(r.e.num)} · ${String(Math.floor(r.c/60)).padStart(2,"0")}:${String(r.c%60).padStart(2,"0")}</title><line x1="${xx}" x2="${xx}" y1="${(y(0)-7).toFixed(1)}" y2="${y(0).toFixed(1)}" stroke="var(--fg)" stroke-width="1.5"/></g>`; });
+  g+=tlMk;
+  /* heure actuelle */
+  const now=new Date(), today=new Date(now.getTime()-now.getTimezoneOffset()*6e4).toISOString().slice(0,10), nm=now.getHours()*60+now.getMinutes();
+  if(today===d&&nm>=t0&&nm<=t1) g+=`<line x1="${x(nm).toFixed(1)}" x2="${x(nm).toFixed(1)}" y1="${T-4}" y2="${T+ph}" stroke="var(--buoy)" stroke-width="2"/><text x="${(x(nm)+4).toFixed(1)}" y="${T+10}" style="fill:var(--fg)">maintenant</text>`;
+  /* flèches de direction */
+  const every=Math.max(1,Math.ceil(24/(pw/pts.length)));
+  pts.forEach((i,k)=>{ if(k%every) return;
+    const rot=s.wd[i], hd=H0!=null?s.ws[i]*Math.cos((s.wd[i]-H0)*Math.PI/180):null;
+    const col=hd==null?"var(--fg)":hd>3?"var(--warn)":hd<-3?"var(--good)":"var(--fg)";
+    const o={ws:s.ws[i],wd:s.wd[i]}; if(hd!=null){ o.head=hd; o.cross=Math.abs(s.ws[i]*Math.sin((s.wd[i]-H0)*Math.PI/180)); }
+    g+=tlArrow(x(mins(i)),12,rot,col,`${s.time[i].slice(11,16)} · ${kmh(s.ws[i])} km/h ${compass(s.wd[i])} (${Math.round(s.wd[i])}°)${s.wg[i]!=null?", rafales "+kmh(s.wg[i]):""}${hd!=null?" · "+windKind(o):""}`)+`<text x="${x(mins(i)).toFixed(1)}" y="29" text-anchor="middle" class="tlcard">${compass(s.wd[i])}</text>`;
+  });
+  g+=`<g aria-hidden="true"><path d="M7 4 10 10 7 8.6 4 10Z" style="fill:var(--fg)"/><text x="7" y="21" text-anchor="middle" style="font-weight:700;fill:var(--fg)">N</text></g>`;
+  /* sens de course du bassin (0° = vers le nord), à côté de la flèche du nord */
+  if(H0!=null) g+=`<text x="25" y="29" text-anchor="middle" class="tlcard" style="fill:var(--accent)">course</text><g transform="translate(25 12) rotate(${Math.round(H0)})"><title>Sens de course : ${Math.round(H0)}° (${compass(H0)})</title><line x1="0" y1="7" x2="0" y2="-7" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/><path d="M-3 -3.5 0 -7.5 3 -3.5" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  const avg=pts.reduce((a,i)=>a+s.ws[i],0)/pts.length, gmax=Math.max(...pts.map(i=>s.wg[i]||0));
+  const dl=new Date(d+"T12:00:00Z").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",timeZone:"UTC"});
+  return `<div class="tlday"><div class="tlhead"><b>${esc(dl)}</b><span>vent moyen ${kmh(avg)} km/h · rafales jusqu'à ${kmh(gmax)} km/h · ${races.length} course${races.length>1?"s":""}</span></div><svg class="tlsvg" width="${W}" height="${Hh}" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Vent le ${esc(dl)}">${g}</svg></div>`;
+}
+function renderTimeline(){
+  const box=$("#wxTl"), body=$("#wxTlBody"), s=WX.series;
+  if(isSample||!s||!LAST||!LAST.length){ box.hidden=true; return; }
+  const byDay={}; LAST.forEach(e=>{ const d=raceDate(e); if(!d) return; (byDay[d]=byDay[d]||[]).push({e,c:raceClock(e)}); });
+  const days=Object.keys(byDay).sort().filter(d=>s.time.some(t=>t.startsWith(d)));
+  if(!days.length){ box.hidden=true; return; }
+  box.hidden=false;
+  $("#tlName").textContent=WX.name||"";
+  const W=Math.max(300,Math.floor(body.clientWidth||900));
+  const h=$("#wxOrient").value, H0=(h!==""&&isFinite(+h))?+h:null;
+  body.innerHTML=days.map(d=>dayChart(d,byDay[d],W,H0)).join("");
+  $("#wxTlNote").innerHTML=`<span class="tlkey"><svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" stroke="var(--accent)" stroke-width="2"/></svg>vent moyen (km/h)</span><span class="tlkey"><svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 3"/></svg>rafales</span><span class="tlkey"><svg width="8" height="12" aria-hidden="true"><line x1="4" y1="2" x2="4" y2="12" stroke="var(--fg)" stroke-width="1.5"/></svg>départ d'une course</span><span class="tlkey"><svg width="8" height="12" aria-hidden="true"><path d="M4 0V10M1 7 4 10.5 7 7" fill="none" stroke="#2f6fb5" stroke-width="1.3"/></svg>skiff U17, U19 et S/U23, H et F</span><span>${H0!=null?`Flèches : sens du vent par rapport au nord (le haut = nord), lettres = d'où vient le vent. Trait bleu à côté du N = sens de course (${esc(h)}°). Couleur des flèches : orange = vent contre, vert = vent pour.`:"Flèches : sens du vent par rapport au nord (le haut = nord), lettres = d'où vient le vent. Réglez l'axe du bassin pour colorer vent pour / vent contre."}</span><span>Modèle Open-Meteo au milieu du bassin, pas une mesure sur place.</span>${hyNote()?`<span>${esc(hyNote())}</span>`:""}`;
+}
+/* état des données fluviales sous la frise */
+function hyNote(){ const code=hydroCode(); if(!code) return "";
+  if(hyBusy&&!HY.range) return "Débit de la rivière : chargement…";
+  if(HY.err) return "Débit de la rivière : "+HY.err;
+  if(HY.code===code&&HY.range&&!(HY.q||[]).length&&(HY.h||[]).length) return `Débit pas encore publié par la station ${HY.name||code} pour ces dates : la frise montre la hauteur d'eau (Hub'Eau / Vigicrues).`;
+  if(HY.code===code&&HY.range&&!(HY.q||[]).length) return `Débit de la rivière : aucune mesure de la station ${HY.name||code} pour ces dates (Hub'Eau ne garde le détail que sur le dernier mois environ).`;
+  return HY.q&&HY.q.length?`Débit mesuré à la station ${HY.name||code} (Hub'Eau / Vigicrues).`:""; }
+let tlResize; window.addEventListener("resize",()=>{ clearTimeout(tlResize); tlResize=setTimeout(renderTimeline,150); });
+
+/* Sélection des courses : décocher une épreuve ou une course la retire de l'affichage et des exports (PDF, copie). Choix mémorisé par régate sur cet appareil */
+let EXP_OFF=new Set();
+function expKey(){ return "ct-sel-"+(regId||""); }
+/* Mémoire commune à toutes les régates : une épreuve entièrement décochée (même nom) l'est aussi dans les autres régates */
+let EXP_KNOWN=new Set(), EXP_EP_OFF=new Set();
+try{ EXP_EP_OFF=new Set(JSON.parse(localStorage.getItem("ct-sel-ep")||"[]")); }catch(e){}
+function expLoad(){ try{ const o=JSON.parse(localStorage.getItem(expKey())||"null"); const a=Array.isArray(o)?{off:o,known:o}:(o||{}); EXP_OFF=new Set(a.off||[]); EXP_KNOWN=new Set(a.known||[]); }catch(e){ EXP_OFF=new Set(); EXP_KNOWN=new Set(); } }
+function expSave(){ try{ localStorage.setItem(expKey(),JSON.stringify({off:[...EXP_OFF],known:[...EXP_KNOWN]}));
+  if(!isSample){ expGroups().forEach(([l,es])=>{ es.every(e=>EXP_OFF.has(e.key))?EXP_EP_OFF.add(l):EXP_EP_OFF.delete(l); }); localStorage.setItem("ct-sel-ep",JSON.stringify([...EXP_EP_OFF])); } }catch(e){} }
+function expGroups(){ const m=new Map(); (LAST||[]).forEach(e=>{ const l=epLabel(e)||"?"; if(!m.has(l)) m.set(l,[]); m.get(l).push(e); }); return [...m.entries()]; }
+function exported(evs){ return evs; }
+function renderExp(){
+  const p=$("#expPanel"); if(!p) return;
+  if(expRenderedFor!==regId){ expRenderedFor=regId; expLoad(); }
+  if(!isSample){ let ch=false; (LAST||[]).forEach(e=>{ if(EXP_KNOWN.has(e.key)) return; EXP_KNOWN.add(e.key); ch=true; if(EXP_EP_OFF.has(epLabel(e)||"?")) EXP_OFF.add(e.key); }); if(ch) expSave(); }
+  const gs=expGroups(), all=gs.flatMap(([,es])=>es), on=all.filter(e=>!EXP_OFF.has(e.key)).length;
+  $("#expSum").textContent=on===all.length?`Courses affichées (toutes)`:`Courses affichées (${on}/${all.length})`;
+  $("#expSel").classList.toggle("partial",on<all.length);
+  p.innerHTML=`<div class="exptop"><span>Affichage et export (PDF, copie)</span><span><button type="button" class="ghost small" data-exp="all">Tout</button> <button type="button" class="ghost small" data-exp="none">Aucune</button></span></div>`+
+    gs.map(([l,es])=>{ const k=es.filter(e=>!EXP_OFF.has(e.key)).length;
+      return `<label class="expep"><input type="checkbox" data-g="${esc(l)}"${k===es.length?" checked":""}${k&&k<es.length?' data-mixed="1"':""}> ${esc(l)}<span class="na">${es.length} course${es.length>1?"s":""}</span></label>`+
+        (es.length>1?es.map(e=>`<label class="expco"><input type="checkbox" data-k="${esc(e.key)}"${EXP_OFF.has(e.key)?"":" checked"}> ${esc(e.num)} · ${esc(String(e.name||"").replace(/^\s*\d+\s*/,""))}</label>`).join(""):""); }).join("");
+  p.querySelectorAll("input[data-mixed]").forEach(i=>i.indeterminate=true);
+}
+let expRenderedFor=null;
+function expApply(){ expSave(); render(); }
+$("#out").addEventListener("change",ev=>{ const c=ev.target; if(!c.classList||!c.classList.contains("sel-pick")) return; c.checked?EXP_OFF.delete(c.dataset.k):EXP_OFF.add(c.dataset.k); expApply(); });
+$("#expPanel").addEventListener("change",ev=>{ const c=ev.target;
+  if(c.dataset.k){ c.checked?EXP_OFF.delete(c.dataset.k):EXP_OFF.add(c.dataset.k); expApply(); }
+  else if(c.dataset.g!==undefined){ const g=expGroups().find(([l])=>l===c.dataset.g); if(g) g[1].forEach(e=>c.checked?EXP_OFF.delete(e.key):EXP_OFF.add(e.key)); expApply(); } });
+$("#expPanel").addEventListener("click",ev=>{ const b=ev.target.closest("button[data-exp]"); if(!b) return; EXP_OFF=b.dataset.exp==="all"?new Set():new Set((LAST||[]).map(e=>e.key)); expApply(); });
+document.addEventListener("click",ev=>{ const d=$("#expSel"); if(d&&d.open&&!d.contains(ev.target)&&document.contains(ev.target)) d.open=false; });
+/* Copie pour tableur */
+$("#copy").onclick=()=>{
+  const evs=exported(filtered(LAST));
+  const lines=[["Course","Épreuve","Catégorie pronostic","Distance","Place","Équipage","Nage","Temps","Pronostic 2000 m","Pronostic distance","Écart au pronostic","% pronostic","Écart au 1er","Heure conditions","Vent km/h","Direction","Rafales km/h","Vent de course","Temp. °C","Passages (cumulé, rang)"]];
+  evs.forEach(e=>e.rows.forEach(r=>lines.push([e.num,epLabel(e),r.cat?r.boat+" "+r.cat:"",e.dist,r.place,r.crew,r.stroke,r.sec?fmt(r.sec):r.pen,r.base?fmt(r.base,0):"",r.prog?fmt(r.prog):"",r.gap!=null?fmt(r.gap):"",r.pct!=null?r.pct.toFixed(2).replace(".",","):"",r.gapWin!=null?fmt(r.gapWin):""].concat(wxCols(e)).concat([r.splits.map(x=>`${x.wp} ${fmt(x.s,1)} (${x.rank})`).join(" · ")]))));
+  const txt=lines.map(a=>a.join("\t")).join("\n"); const t=$("#toast");
+  navigator.clipboard.writeText(txt).then(()=>t.textContent="Copié : collez dans Excel ou Google Sheets.")
+    .catch(()=>{ $("#pasteBox").open=true; $("#paste").value=txt; $("#paste").select(); t.textContent="Copie bloquée : le tableau est sélectionné dans la zone de texte, faites Ctrl/Cmd + C."; });
+  setTimeout(()=>t.textContent="",4000);
+};
+
+$("#ref").innerHTML=`<table><thead><tr><th>Cat.</th>${CATS.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>${BOATS.map(b=>`<tr><td>${b}</td>${CATS.map(c=>`<td>${PROG[b][c]||"–"}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+
+try{ const u=localStorage.getItem("ct-url"); if(u) $("#url").value=u; const w=localStorage.getItem("ct-where"); if(w) $("#where").value=w; }catch(e){}
+$("#splitWp").addEventListener("change",()=>{ $("#splitWp").dataset.touched="1"; });
+$("#where").addEventListener("change",()=>{ try{ localStorage.setItem("ct-where",$("#where").value); }catch(e){} });
+/* Options d'affichage mémorisées sur cet appareil, quelle que soit la régate (vue, tri, filtres, catégories U17 / mixtes) */
+const DISP_F=["fSex","fAge","fBoat","fCat","fDay","u17","mix"];
+function dispSave(){ try{ const o={view,sortKey,sortDir}; DISP_F.forEach(k=>{ const el=$("#"+k); o[k]=el.value||el.dataset.want||""; }); localStorage.setItem("ct-disp",JSON.stringify(o)); }catch(e){} }
+(function dispLoad(){ try{ const o=JSON.parse(localStorage.getItem("ct-disp")||"null"); if(!o) return;
+  DISP_F.forEach(k=>{ const el=$("#"+k); if(o[k]==null||o[k]==="") return; if(k==="fCat"||k==="fDay") el.dataset.want=o[k]; else el.value=o[k]; });
+  if(o.view==="flat"||o.view==="race"){ view=o.view; $("#vRace").setAttribute("aria-pressed",String(view==="race")); $("#vFlat").setAttribute("aria-pressed",String(view==="flat")); }
+  if(o.sortKey){ sortKey=o.sortKey; sortDir=o.sortDir||1; }
+}catch(e){} })();
+DISP_F.forEach(k=>$("#"+k).addEventListener("change",()=>{ if(k==="fCat"||k==="fDay") delete $("#"+k).dataset.want; dispSave(); }));
+["#vRace","#vFlat"].forEach(s=>$(s).addEventListener("click",dispSave));
+$("#out").addEventListener("click",ev=>{ if(ev.target.closest("th[data-s]")) dispSave(); });
+render();
+
+/* Export PDF (jsPDF + AutoTable) : exporte ce qui est affiché, avec les filtres en cours */
+function pdfTxt(s){ return String(s??"").replace(/→/g,"->").replace(/≥/g,">=").replace(/[−–—]/g,"-").replace(/[^\x00-\xFF]/g,""); }
+const PDF_BANDS={"p-top":[[226,242,233],[31,122,77]],"p-hi":[[230,240,243],[11,93,115]],"p-mid":[[251,240,220],[178,107,0]],"p-low":[[248,228,226],[179,54,44]]};
+function pctCell(p,best){
+  if(p==null) return {content:"-",styles:{halign:"right",textColor:[120,130,135]}};
+  const [bg,fg]=PDF_BANDS[band(p,best)];
+  return {content:pctTxt(p),styles:{halign:"right",fillColor:bg,textColor:fg,fontStyle:"bold"}};
+}
+/* Cellule « Vent » du PDF : couleur vent pour / vent contre + petite flèche dessinée (comme à l'écran) */
+function wxPdfCell(o){
+  if(!o) return "-";
+  const h=$("#wxOrient").value, H0=(h!==""&&isFinite(+h))?+h:null;
+  const k=wxCls(o), bg=k===" face"?PDF_BANDS["p-mid"]:k===" dos"?PDF_BANDS["p-top"]:null;
+  return {content:pdfTxt(wxShort(o)),_wx:{rot:H0!=null?o.wd-H0:o.wd,col:bg?bg[1]:[20,38,46],boat:H0!=null},styles:{cellPadding:{top:1.1,bottom:1.1,right:1.1,left:6.4},...(bg?{fillColor:bg[0],textColor:bg[1]}:{})}};
+}
+/* Petit bateau (vers le haut) + flèche du vent, dessinés dans le PDF comme le symbole de la page */
+function wxGlyph(doc,cx,cy,rot,col,boat){
+  if(boat){ doc.setFillColor(160,170,175); doc.lines([[0.75,1.3],[0.05,3.1],[-1.6,0],[0.05,-3.1]],cx,cy-2.25,[1,1],"F",true); }
+  const L=3.4, a=rot*Math.PI/180, vx=-Math.sin(a), vy=Math.cos(a); /* flèche « vers le bas » tournée : sens où souffle le vent */
+  const hx=cx+vx*L/2, hy=cy+vy*L/2, tx=cx-vx*L/2, ty=cy-vy*L/2, b=1.15;
+  doc.setDrawColor(...col); doc.setLineWidth(.4); doc.line(tx,ty,hx,hy);
+  const r=(dx,dy)=>[dx*Math.cos(a)-dy*Math.sin(a),dx*Math.sin(a)+dy*Math.cos(a)];
+  [[-b,-b],[b,-b]].forEach(([px,py])=>{ const [qx,qy]=r(px,py); doc.line(hx,hy,hx+qx,hy+qy); });
+}
+function wxPdfDraw(doc,d){
+  const w=d.cell?.raw?._wx; if(d.section!=="body"||!w) return;
+  wxGlyph(doc,d.cell.x+3,d.cell.y+d.cell.height/2,w.rot,w.col,w.boat);
+}
+/* En-tête de course (vue par course) : pastille vent à droite, même code couleur */
+function wxChipW(doc,o){ if(!o) return 0; doc.setFont("helvetica","bold"); doc.setFontSize(7.5); return doc.getTextWidth(pdfTxt(`${o.time} · ${wxShort(o)}`))+9; }
+function wxPdfHead(doc,d,o){
+  if(!o) return;
+  const c=wxPdfCell(o), w=c._wx, bg=c.styles.fillColor||[236,241,243], fg=c.styles.textColor||[20,38,46];
+  const txt=pdfTxt(`${o.time} · ${wxShort(o)}`), cw=wxChipW(doc,o), x2=d.cell.x+d.cell.width-1.5, cy=d.cell.y+d.cell.height/2, x1=x2-cw;
+  doc.setFillColor(...bg); doc.roundedRect(x1,cy-2.7,cw,5.4,1,1,"F");
+  wxGlyph(doc,x1+3.2,cy,w.rot,w.col,w.boat);
+  doc.setTextColor(...fg); doc.text(txt,x1+6.3,cy+1.05);
+}
+/* Images PNG de la frise du vent (couleurs du thème clair, pour un PDF sur fond blanc) */
+async function tlImages(){
+  if($("#wxTl").hidden) return [];
+  const css=[...document.querySelectorAll("style")].map(x=>x.textContent).join("\n"), m=css.match(/:root\s*\{([^}]*)\}/), V={};
+  if(m) m[1].replace(/(--[\w-]+)\s*:\s*([^;]+);?/g,(_,k,v)=>{ V[k]=v.trim(); });
+  const cs=getComputedStyle(document.documentElement), col=k=>V[k]||cs.getPropertyValue(k).trim()||"#14262e";
+  const out=[];
+  for(const day of document.querySelectorAll("#wxTlBody .tlday")){
+    const svg=day.querySelector("svg"); if(!svg) continue;
+    const w=+svg.getAttribute("width"), h=+svg.getAttribute("height");
+    let src=new XMLSerializer().serializeToString(svg).replace(/var\((--[\w-]+)\)/g,(_,k)=>col(k));
+    const st=`<style>text{font-family:Helvetica,Arial,sans-serif;font-size:11px;fill:${col("--muted")}}text.tlcard{font-size:8.5px;fill:${col("--fg")}}</style>`;
+    src=src.replace(/^<svg([^>]*)>/,(a,attrs)=>`<svg${attrs.includes("xmlns=")?attrs:attrs+' xmlns="http://www.w3.org/2000/svg"'}>`+st+`<rect width="100%" height="100%" fill="#ffffff"/>`);
+    const img=new Image(); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(src);
+    await img.decode();
+    const k=2, c=document.createElement("canvas"); c.width=w*k; c.height=h*k;
+    const g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height);
+    const head=day.querySelector(".tlhead");
+    out.push({data:c.toDataURL("image/png"),w,h,title:head?.querySelector("b")?.textContent||"",sub:head?.querySelector("span")?.textContent||""});
+  }
+  return out;
+}
+async function exportPdf(){
+  const btn=$("#pdf"), t=$("#toast");
+  const jsPDF = window.jspdf && window.jspdf.jsPDF;
+  if(!jsPDF){ t.textContent="Le module PDF n'a pas pu se charger. Vérifiez la connexion puis rechargez la page."; return; }
+  btn.disabled=true; t.textContent="Préparation du PDF…";
+  try{
+    const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+    const H=doc.internal.pageSize.getHeight(), M=14;
+    const evs=exported(filtered(LAST)); if(!evs.length){ t.textContent="Aucune course cochée à exporter."; btn.disabled=false; return; }
+    const fl=[$("#fDay").value&&("Journée : "+$("#fDay").value),$("#fCat").value&&("Épreuve : "+$("#fCat").value),$("#fText").value.trim()&&("Recherche : "+$("#fText").value.trim())].filter(Boolean).join(" · ");
+    doc.setFont("helvetica","bold"); doc.setFontSize(17); doc.setTextColor(20,38,46);
+    doc.text(pdfTxt($("#regName").textContent),M,16);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(91,111,120);
+    doc.text(pdfTxt(`Pourcentage du temps pronostic (olympiade 2025-2028) · pronostic ÷ temps réalisé × 100`),M,22);
+    if(fl) doc.text(pdfTxt(fl),M,27);
+    const corr=Object.keys(codeOv).map(k=>{ const o=codeOv[k]; return (k.startsWith("#")?"1 équipage":k)+" -> "+[o.boat,o.cat].filter(v=>v!==undefined).map(v=>v||"hors table").join(" "); });
+    let y = fl?31:27;
+    if(corr.length){ doc.text(pdfTxt("Corrections de catégorie : "+corr.join(" · ")),M,y,{maxWidth:doc.internal.pageSize.getWidth()-2*M}); y+=5; }
+    /* Frise du vent en tête du PDF */
+    try{
+      const tl=await tlImages();
+      if(tl.length){
+        y+=2; doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(20,38,46);
+        doc.text(pdfTxt("Vent sur le bassin · "+(WX.name||"")),M,y+3); y+=6;
+        const PW=doc.internal.pageSize.getWidth()-2*M;
+        for(const im of tl){
+          const hh=PW*im.h/im.w;
+          if(y+hh+8>H-10){ doc.addPage(); y=14; }
+          doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(20,38,46); doc.text(pdfTxt(im.title),M,y+2);
+          doc.setFont("helvetica","normal"); doc.setTextColor(91,111,120); doc.text(pdfTxt(im.sub),M+doc.getTextWidth(pdfTxt(im.title))+3,y+2);
+          doc.addImage(im.data,"PNG",M,y+3.5,PW,hh); y+=hh+6;
+        }
+        doc.setFontSize(7.5); doc.setTextColor(91,111,120);
+        const note=pdfTxt(($("#wxTlNote")?.innerText||"").replace(/\s+/g," ").trim());
+        if(note){ const ln=doc.splitTextToSize(note,doc.internal.pageSize.getWidth()-2*M); doc.text(ln,M,y); y+=ln.length*3.2+2; }
+      }
+    }catch(err){ console.warn("frise PDF",err); }
+    y+=2;
+    const base={theme:"grid",margin:{left:M,right:M},styles:{font:"helvetica",fontSize:8.5,cellPadding:1.6,lineColor:[214,224,227],lineWidth:.1,textColor:[20,38,46]},headStyles:{fillColor:[20,38,46],textColor:255,fontStyle:"bold"}};
+    if(view==="flat"){
+      const rows=evs.flatMap(e=>e.rows.filter(r=>r.sec).map(r=>({...r,ev:e}))).sort((a,b)=>(b.pct??-1)-(a.pct??-1));
+      doc.autoTable({...base,startY:y,styles:{...base.styles,fontSize:7,cellPadding:1.1},
+        head:[["#","Équipage","Nage","Catégorie d'origine","Cat. et tps prono 2k","Vent","Temps","% pronostic","Écart %"].map(pdfTxt)],
+        body:rows.map((r,i,all)=>[i+1,pdfTxt(r.crew),pdfTxt(r.stroke),pdfTxt(origOf(r)),pdfTxt(r.base?catLabel(r.boat,r.cat)+"  "+fmt(r.base,0):(catLabel(r.boat,r.cat)||"-")),wxPdfCell(wxAt(r.ev)),fmt(r.sec),pctCell(r.pct,bestPct(all)),{content:r.pct==null||all[0].pct==null?"-":i===0||Math.abs(all[0].pct-r.pct)<0.005?"en tête":"-"+(all[0].pct-r.pct).toFixed(2).replace(".",",")+" %",styles:{halign:"right"}}]),
+        columnStyles:{0:{halign:"right",cellWidth:9},6:{halign:"right"}},didDrawCell:d=>wxPdfDraw(doc,d)});
+    } else {
+      evs.forEach(e=>{
+        if(y>H-30){ doc.addPage(); y=14; }
+        const head=`${e.num}  ${e.name.replace(/^\d+\s*/,"")}${e.abbrev?"  ["+e.abbrev+"]":""}  ·  ${e.dist} m  ·  Pronostic ${e.mixed?"selon l'équipage":e.prog?progTxt(e.base,e.prog,e.dist):"-"}${(o=>o&&o.q?"  ·  débit "+fmtQ(o.q.v)+" m³/s":"")(hyAt(e))}`;
+        doc.autoTable({...base,startY:y,
+          head:[[{content:pdfTxt(head),colSpan:7,styles:{fillColor:[11,93,115],halign:"left",minCellHeight:7,cellPadding:{top:1.6,bottom:1.6,left:1.6,right:wxAt(e)?wxChipW(doc,wxAt(e))+4:1.6}}}],["Pl.","Équipage","Nage","Cat. et tps prono","Temps","Écart","% pronostic"].map(c=>({content:pdfTxt(c),styles:{fillColor:[230,236,238],textColor:[20,38,46]}}))],
+          body:e.rows.map(r=>[pdfTxt(r.place),pdfTxt(r.crew),pdfTxt(r.stroke),pdfTxt(catLabel(r.boat,r.cat))+(r.prog?pdfTxt("  ("+progTxt(r.base,r.prog,r.dist)+")"):""),r.sec?fmt(r.sec):pdfTxt(r.pen||"en attente"),pdfTxt(r.gapWin==null?"-":r.gapWin<0.0005?"en tete":"+"+fmt(r.gapWin)),pctCell(r.pct,bestPct(e.rows))]),
+          columnStyles:{0:{halign:"right",cellWidth:10},4:{halign:"right"},5:{halign:"right"}},
+          didDrawCell:d=>{ if(d.section==="head"&&d.row.index===0&&d.column.index===0) wxPdfHead(doc,d,wxAt(e)); },
+          rowPageBreak:"avoid"});
+        y=doc.lastAutoTable.finalY+6;
+      });
+    }
+    const n=doc.getNumberOfPages();
+    for(let i=1;i<=n;i++){ doc.setPage(i); doc.setFontSize(8); doc.setTextColor(120,130,135); doc.text(`${i} / ${n}`,doc.internal.pageSize.getWidth()-M,H-6,{align:"right"}); doc.setFontSize(7); doc.text("Luke EPAIN - CTN Aviron",M,H-6); doc.text(pdfTxt("édité le "+new Date().toLocaleString("fr-FR")),doc.internal.pageSize.getWidth()/2,H-6,{align:"center"}); }
+    const name=`pronostics-${regId||"resultats"}-${new Date().toISOString().slice(0,10)}.pdf`;
+    let dl=null;
+    if(window.claude && window.claude.use){ try{ dl=await window.claude.use("downloads"); }catch(_){ dl=null; } }
+    if(dl){
+      try{ await dl.save({filename:name,data:doc.output("blob")}); t.textContent="PDF enregistré."; }
+      catch(err){ t.textContent = err&&err.code==="declined" ? "Enregistrement annulé." : err&&err.code==="rate_limited" ? "Une demande d'enregistrement est déjà ouverte." : "L'enregistrement du PDF n'est pas disponible ici."; }
+    } else if(window.claude && window.claude.use){
+      t.textContent="L'enregistrement de fichiers n'est pas disponible dans cette vue.";
+    } else { doc.save(name); t.textContent="PDF téléchargé."; }
+  }catch(err){ t.textContent="Le PDF n'a pas pu être créé."; console.error(err); }
+  finally{ btn.disabled=false; setTimeout(()=>{ if(!btn.disabled) t.textContent=""; },6000); }
+}
+$("#pdf").onclick=exportPdf;
+</script>
+
+</body>
+</html>
