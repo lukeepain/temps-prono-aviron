@@ -621,7 +621,6 @@ function render(){
         <span class="race-meta">
           ${e.abbrev?`<span class="tag">${esc(e.abbrev)}</span>`:""}
           <label class="distin${e.distEd?" edited":""}" title="Distance de la course : modifiable si elle n'est pas la même pour toutes les épreuves"><input type="number" data-k="${esc(e.key)}" data-f="dist" value="${e.dist}" min="100" max="20000" step="50" inputmode="numeric" aria-label="Distance de la course ${esc(e.num)} en mètres"> m</label>
-          ${wxChip(e)}
           <select data-k="${esc(e.key)}" data-f="boat" aria-label="Bateau">${['<option value="">Bateau ?</option>',...BOATS.map(b=>`<option${b===e.boat?" selected":""}>${b}</option>`)].join("")}</select>
           <select data-k="${esc(e.key)}" data-f="cat" aria-label="Catégorie">${['<option value="">Hors table</option>',...CATS.filter(c=>!e.boat||hasProg(e.boat,c)).map(c=>`<option${c===e.cat?" selected":""}>${c}</option>`)].join("")}</select>
           <span>Pronostic <b class="t">${e.mixed?"selon l'équipage":e.prog?progTxt(e.base,e.prog,e.dist):"—"}</b></span>
@@ -639,8 +638,8 @@ function render(){
     const topPct=Math.max(-Infinity,...list.map(r=>r.pct).filter(p=>p!=null));
     const gapTxt=p=>p==null||!isFinite(topPct)?`<span class="na">—</span>`:Math.abs(p-topPct)<0.005?`<span class="na">en tête</span>`:`−${(topPct-p).toFixed(2).replace(".",",")} %`;
     const th=(k,l,r)=>`<th data-s="${k}"${r?' class="r"':""}${k===sortKey?` aria-sort="${sortDir>0?"ascending":"descending"}"`:""}>${l}${k===sortKey?(sortDir>0?" ↑":" ↓"):""}</th>`;
-    out.innerHTML = `<div class="race"><div class="tablewrap"><table class="flat"><thead><tr><th class="r">#</th>${th("crew","Équipage")}${th("orig","Catégorie d'origine")}${th("ep","Épreuve")}${th("ev","Course",1)}${th("wind","Vent")}${th("sec","Temps",1)}${th("pct","% pronostic",1)}<th class="r" title="Écart de % avec le meilleur pourcentage du classement affiché">Écart %</th>${th("cat","Cat. et tps prono")}<th class="r" title="Allure moyenne au 500 m">/500m</th></tr></thead><tbody>
-      ${list.map((r,i)=>`<tr${CMP.has(r.rid)?' class="picked"':""}>${cmpCell(r)}<td class="r t">${i+1}</td><td>${esc(r.crew)}${r.stroke?` <span class="na">· ${esc(r.stroke)}</span>`:""}</td><td><span class="tag">${esc(origOf(r)||"?")}</span></td><td><span class="tag">${esc(epLabel(r.ev))}</span></td><td class="r t">${esc(r.ev.num)}</td><td>${wxShortHtml(r.ev)}</td><td class="r t">${fmt(r.sec)}</td>
+    out.innerHTML = `<div class="race"><div class="tablewrap"><table class="flat"><thead><tr><th class="r">#</th>${th("crew","Équipage")}${th("orig","Catégorie d'origine")}${th("ep","Épreuve")}${th("ev","Course",1)}${th("sec","Temps",1)}${th("pct","% pronostic",1)}<th class="r" title="Écart de % avec le meilleur pourcentage du classement affiché">Écart %</th>${th("cat","Cat. et tps prono")}<th class="r" title="Allure moyenne au 500 m">/500m</th></tr></thead><tbody>
+      ${list.map((r,i)=>`<tr${CMP.has(r.rid)?' class="picked"':""}>${cmpCell(r)}<td class="r t">${i+1}</td><td>${esc(r.crew)}${r.stroke?` <span class="na">· ${esc(r.stroke)}</span>`:""}</td><td><span class="tag">${esc(origOf(r)||"?")}</span></td><td><span class="tag">${esc(epLabel(r.ev))}</span></td><td class="r t">${esc(r.ev.num)}</td><td class="r t">${fmt(r.sec)}</td>
       <td class="r">${r.pct!=null?`<span class="pct ${band(r.pct,topPct)}">${pctTxt(r.pct)}</span>`:`<span class="na">hors table</span>`}</td><td class="r t">${gapTxt(r.pct)}</td><td>${rowSel(r)}</td><td class="r t">${paceTxt(r.sec,r.dist||r.ev.dist)}</td></tr>`).join("")}
       </tbody></table></div></div>`;
     out.querySelectorAll("th[data-s]").forEach(h=>h.onclick=()=>{ const k=h.dataset.s; if(k===sortKey) sortDir*=-1; else {sortKey=k; sortDir=k==="pct"?-1:1;} render(); });
@@ -1326,18 +1325,17 @@ async function exportPdf(){
     if(view==="flat"){
       const rows=evs.flatMap(e=>e.rows.filter(r=>r.sec).map(r=>({...r,ev:e}))).sort((a,b)=>(b.pct??-1)-(a.pct??-1));
       doc.autoTable({...base,startY:y,styles:{...base.styles,fontSize:7,cellPadding:1.1},
-        head:[["#","Équipage","Nage","Catégorie d'origine","Cat. et tps prono 2k","Vent","Temps","% pronostic","Écart %"].map(pdfTxt)],
-        body:rows.map((r,i,all)=>[i+1,pdfTxt(r.crew),pdfTxt(r.stroke),pdfTxt(origOf(r)),pdfTxt(r.base?catLabel(r.boat,r.cat)+"  "+fmt(r.base,0):(catLabel(r.boat,r.cat)||"-")),wxPdfCell(wxAt(r.ev)),fmt(r.sec),pctCell(r.pct,bestPct(all)),{content:r.pct==null||all[0].pct==null?"-":i===0||Math.abs(all[0].pct-r.pct)<0.005?"en tête":"-"+(all[0].pct-r.pct).toFixed(2).replace(".",",")+" %",styles:{halign:"right"}}]),
-        columnStyles:{0:{halign:"right",cellWidth:9},6:{halign:"right"}},didDrawCell:d=>wxPdfDraw(doc,d)});
+        head:[["#","Équipage","Nage","Catégorie d'origine","Cat. et tps prono 2k","Temps","% pronostic","Écart %"].map(pdfTxt)],
+        body:rows.map((r,i,all)=>[i+1,pdfTxt(r.crew),pdfTxt(r.stroke),pdfTxt(origOf(r)),pdfTxt(r.base?catLabel(r.boat,r.cat)+"  "+fmt(r.base,0):(catLabel(r.boat,r.cat)||"-")),fmt(r.sec),pctCell(r.pct,bestPct(all)),{content:r.pct==null||all[0].pct==null?"-":i===0||Math.abs(all[0].pct-r.pct)<0.005?"en tête":"-"+(all[0].pct-r.pct).toFixed(2).replace(".",",")+" %",styles:{halign:"right"}}]),
+        columnStyles:{0:{halign:"right",cellWidth:9},5:{halign:"right"}}});
     } else {
       evs.forEach(e=>{
         if(y>H-30){ doc.addPage(); y=14; }
-        const head=`${e.num}  ${e.name.replace(/^\d+\s*/,"")}${e.abbrev?"  ["+e.abbrev+"]":""}  ·  ${e.dist} m  ·  Pronostic ${e.mixed?"selon l'équipage":e.prog?progTxt(e.base,e.prog,e.dist):"-"}${(o=>o&&o.q?"  ·  débit "+fmtQ(o.q.v)+" m³/s":"")(hyAt(e))}`;
+        const head=`${e.num}  ${e.name.replace(/^\d+\s*/,"")}${e.abbrev?"  ["+e.abbrev+"]":""}  ·  ${e.dist} m  ·  Pronostic ${e.mixed?"selon l'équipage":e.prog?progTxt(e.base,e.prog,e.dist):"-"}`;
         doc.autoTable({...base,startY:y,
-          head:[[{content:pdfTxt(head),colSpan:7,styles:{fillColor:[11,93,115],halign:"left",minCellHeight:7,cellPadding:{top:1.6,bottom:1.6,left:1.6,right:wxAt(e)?wxChipW(doc,wxAt(e))+4:1.6}}}],["Pl.","Équipage","Nage","Cat. et tps prono","Temps","Écart","% pronostic"].map(c=>({content:pdfTxt(c),styles:{fillColor:[230,236,238],textColor:[20,38,46]}}))],
+          head:[[{content:pdfTxt(head),colSpan:7,styles:{fillColor:[11,93,115],halign:"left",minCellHeight:7,cellPadding:{top:1.6,bottom:1.6,left:1.6,right:1.6}}}],["Pl.","Équipage","Nage","Cat. et tps prono","Temps","Écart","% pronostic"].map(c=>({content:pdfTxt(c),styles:{fillColor:[230,236,238],textColor:[20,38,46]}}))],
           body:e.rows.map(r=>[pdfTxt(r.place),pdfTxt(r.crew),pdfTxt(r.stroke),pdfTxt(catLabel(r.boat,r.cat))+(r.prog?pdfTxt("  ("+progTxt(r.base,r.prog,r.dist)+")"):""),r.sec?fmt(r.sec):pdfTxt(r.pen||"en attente"),pdfTxt(r.gapWin==null?"-":r.gapWin<0.0005?"en tete":"+"+fmt(r.gapWin)),pctCell(r.pct,bestPct(e.rows))]),
           columnStyles:{0:{halign:"right",cellWidth:10},4:{halign:"right"},5:{halign:"right"}},
-          didDrawCell:d=>{ if(d.section==="head"&&d.row.index===0&&d.column.index===0) wxPdfHead(doc,d,wxAt(e)); },
           rowPageBreak:"avoid"});
         y=doc.lastAutoTable.finalY+6;
       });
