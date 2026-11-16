@@ -46,6 +46,7 @@ header{grid-template-columns:minmax(0,1fr) auto auto}
 #intro{display:none!important}
 @media (max-width:700px){header{column-gap:10px}.hlogo{height:46px;padding:3px 5px}header h1{font-size:27px}header .eyebrow{font-size:10.5px;letter-spacing:.06em}}
 @media (max-width:420px){.hlogo{height:38px}}
+.wxnote{border:1px solid var(--warn);border-left-width:4px;background:var(--chip-warn,rgba(178,107,0,.08));border-radius:6px;padding:12px 16px;font-size:14px;line-height:1.45}.wxnote p{margin:0}.wxnote ul{margin:6px 0 8px;padding-left:20px}.wxnote li{margin:2px 0}.wxnote b{color:var(--warn)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:14px;min-width:0}
 h2{font-family:var(--f-display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px;margin:0}
 label,.lbl{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
@@ -219,6 +220,16 @@ summary{cursor:pointer;font-weight:600;color:var(--accent)}
     <h1>Temps Prono Aviron</h1>
     <div class="clock" id="clock" aria-live="off"><div class="clk-t" id="clkT">--:--:--</div><div class="clk-u" id="clkU"></div></div>
   </header>
+
+  <aside class="wxnote" role="note" aria-labelledby="wxnote-t">
+    <p id="wxnote-t"><b>Attention :</b> l'influence des données météo sur les conditions de course est à relativiser, pour les raisons suivantes :</p>
+    <ul>
+      <li>la mesure météo est faite en un point fixe, pas sur tout le parcours ;</li>
+      <li>le bassin est parfois sinueux, notamment pour les têtes de rivière ;</li>
+      <li>certaines portions du parcours sont parfois protégées du vent et du courant.</li>
+    </ul>
+    <p>Ces données donnent donc des informations d'ordre général : elles peuvent au mieux dégager des tendances, pas des mesures précises.</p>
+  </aside>
 
   <section class="panel" id="wxTl" aria-labelledby="h-tl" hidden>
     <h2 id="h-tl">Vent sur le bassin <span class="tlname" id="tlName"></span></h2>
