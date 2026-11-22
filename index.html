@@ -1167,7 +1167,7 @@ function dayChart(d,races,W,H0){
 }
 function renderTimeline(){
   const box=$("#wxTl"), body=$("#wxTlBody"), s=WX.series;
-  if(isSample||!s||!LAST||!LAST.length){ box.hidden=true; return; }
+  if(isSample||!s||!LAST||!LAST.length||!BASINS.some(b=>b.id===basinId)){ box.hidden=true; return; } /* pas de frise sans bassin sélectionné */
   const byDay={}; LAST.forEach(e=>{ const d=raceDate(e); if(!d) return; (byDay[d]=byDay[d]||[]).push({e,c:raceClock(e)}); });
   const days=Object.keys(byDay).sort().filter(d=>s.time.some(t=>t.startsWith(d)));
   if(!days.length){ box.hidden=true; return; }
