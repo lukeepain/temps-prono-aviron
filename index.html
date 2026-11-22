@@ -271,7 +271,7 @@ summary{cursor:pointer;font-weight:600;color:var(--accent)}
     <div class="wxbox">
       <span class="lbl" style="margin:0">Conditions du bassin</span>
       <div class="wxrow">
-        <div style="flex:3 1 260px"><label for="basinSel">Bassin enregistré</label><select id="basinSel"><option value="">Aucun : saisie libre ci-dessous</option></select></div>
+        <div style="flex:3 1 260px"><label for="basinSel">Bassin enregistré</label><select id="basinSel"><option value="">Aucun bassin</option></select></div>
         <div class="btns" style="align-self:end"><button id="basinNew" class="ghost small" type="button">Ajouter un bassin</button><button id="basinEdit" class="ghost small" type="button" disabled>Modifier</button></div>
       </div>
       <div class="basinForm" id="basinForm" hidden>
@@ -1042,7 +1042,7 @@ function basinAxis(){
 }
 function basinUi(){
   const sel=$("#basinSel");
-  sel.innerHTML=`<option value="">Aucun : saisie libre ci-dessous</option>`+BASINS.slice().sort((a,b)=>a.name.localeCompare(b.name,"fr")).map(b=>`<option value="${esc(b.id)}"${b.id===basinId?" selected":""}>${esc(b.name)} · axe ${deg1(b.axis)}°</option>`).join("");
+  sel.innerHTML=`<option value="">Aucun bassin</option>`+BASINS.slice().sort((a,b)=>a.name.localeCompare(b.name,"fr")).map(b=>`<option value="${esc(b.id)}"${b.id===basinId?" selected":""}>${esc(b.name)} · axe ${deg1(b.axis)}°</option>`).join("");
   $("#basinEdit").disabled=!BASINS.some(b=>b.id===basinId);
 }
 function applyBasin(b, fetch){
@@ -1081,6 +1081,10 @@ $("#bDel").onclick=e=>{
 $("#basinSel").onchange=e=>{
   basinId=e.target.value||null; saveBasins(); basinUi();
   const b=BASINS.find(x=>x.id===basinId); if(b) applyBasin(b,true);
+  else { /* aucun bassin : on efface lieu, météo et débit */
+    WX.lat=null; WX.lon=null; WX.name=""; WX.series=null; WX.range=""; wxResults=[]; HY={code:null,q:[],h:[]};
+    $("#wxPlace").value=""; $("#wxOrient").value=""; saveWx(); wxUi(); wxMsg(""); render();
+  }
 };
 basinUi();
 
